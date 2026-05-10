@@ -11,7 +11,7 @@ async function loadMediapipe() {
 }
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbwAiyfyz0HeTgalFwradj-ONapV-Cwug_rGF_qR7MV0f4SFUiTvbeBBGcELu-R23Rlcaw/exec";
+  "https://script.google.com/macros/s/AKfycbwk6ZFFQgA5z2Ct-YUKPjGj50dK9OfP-sDzoW4TEdh91OIgjXOnayiZ5sRpbqWRxiZYww/exec";
 
 // AI 按鈕統一走 GAS 後端，不在前端放 Gemini API Key。
 
@@ -25,15 +25,20 @@ async function getFaceLandmarker() {
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
   );
 
-  faceLandmarkerInstance = await FaceLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath:
-        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
-      delegate: "GPU",
-    },
-    runningMode: "IMAGE",
-    numFaces: 1,
-  });
+  // 使用 CPU 比 GPU 穩。部分預覽環境的 WebGL / GPU delegate 會啟動失敗。
+  try {
+    faceLandmarkerInstance = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+        delegate: "CPU",
+      },
+      runningMode: "IMAGE",
+      numFaces: 1,
+    });
+  } catch (error) {
+    throw new Error("MediaPipe 點位模型載入失敗，請重新整理頁面後再試；若仍失敗，請改用正式 Vercel 網站測試。" );
+  }
 
   return faceLandmarkerInstance;
 }
