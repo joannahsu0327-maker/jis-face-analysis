@@ -458,12 +458,13 @@ async function fetchSheetRows(sheetName) {
   return parsed;
 }
 
-async function requestAIInitialAnalysis(photoBase64) {
+async function requestAIInitialAnalysis(photoBase64, provider = "gemini") {
   const response = await fetch(API_BASE_URL, {
     method: "POST",
     body: JSON.stringify({
       action: "aiAnalyzeFace",
       imageBase64: photoBase64,
+      provider,
     }),
   });
 
@@ -472,12 +473,13 @@ async function requestAIInitialAnalysis(photoBase64) {
   return result.result;
 }
 
-async function requestAIProportionAnalysis(photoBase64) {
+async function requestAIProportionAnalysis(photoBase64, provider = "gemini") {
   const response = await fetch(API_BASE_URL, {
     method: "POST",
     body: JSON.stringify({
       action: "aiAnalyzeProportion",
       imageBase64: photoBase64,
+      provider,
     }),
   });
 
@@ -1020,6 +1022,18 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
           先依照片輔助判斷：AI 初判臉型、比例、直曲、量感、風格、年齡感；也可輔助估算三庭五眼。
         </div>
 
+        <div className="mb-4 rounded-3xl border border-rose-100 bg-rose-50/40 p-4">
+          <SingleChoiceGroup
+            label="AI 模型選擇"
+            value={data.aiProvider || "gemini"}
+            options={["gemini", "openai"]}
+            onChange={(next) => updateField("aiProvider", next || "gemini")}
+          />
+          <div className="mt-2 text-xs leading-5 text-stone-500">
+            Gemini 為目前穩定預設；OpenAI 可用來做同張照片比較判讀。
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-3">
           <button type="button" disabled={!data.photo || aiState.status === "loading"} onClick={onAIAnalyze} className="rounded-full bg-stone-900 px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-30">
             {aiState.status === "loading" ? "AI 分析中…" : "AI 初判臉型／比例／直曲／量感／風格／年齡感"}
@@ -1361,7 +1375,7 @@ export default function App() {
   const [options, setOptions] = useState(fallbackOptions);
   const [apiStates, setApiStates] = useState({ face: { status: "idle", error: "" }, ratio: { status: "idle", error: "" }, line: { status: "idle", error: "" }, volume: { status: "idle", error: "" }, style: { status: "idle", error: "" }, age: { status: "idle", error: "" } });
   const [data, setData] = useState({
-    clientName: "", need: "完整形象報告", photo: null,
+    clientName: "", need: "完整形象報告", photo: null, aiProvider: "gemini",
     measurements: { faceLength: "", faceWidth: "", upperThird: "", middleThird: "", lowerThird: "" },
     eyeObservation: "", extraObservation: "", colorSeason: "",
     ageAssessment: {}, lineAssessment: {},
@@ -1410,7 +1424,7 @@ export default function App() {
     if (!data.photo) return;
     setLandmarkState({ status: "loading", error: "" });
     try {
-      const result = await requestAIProportionAnalysis(data.photo);
+      const result = await requestAIProportionAnalysis(data.photo, data.aiProvider || "gemini");
 
       setData((prev) => ({
         ...prev,
@@ -1441,7 +1455,7 @@ export default function App() {
     if (!data.photo) return;
     setAiState({ status: "loading", error: "", result: null, mapped: null });
     try {
-      const result = await requestAIInitialAnalysis(data.photo);
+      const result = await requestAIInitialAnalysis(data.photo, data.aiProvider || "gemini");
       const mapped = mapAIResultToCodes(result);
       setData((prev) => ({
         ...prev,
@@ -1517,7 +1531,7 @@ export default function App() {
     if (!saveState.rowNumber) return;
     setRecommendState({ status: "loading", error: "", result: null });
     try {
-      const response = await fetch(API_BASE_URL, { method: "POST", body: JSON.stringify({ action: "generateRecommendation", row: saveState.rowNumber }) });
+      const response = await fetch(API_BASE_URL, { method: "POST", body: JSON.stringify({ action: "generateRecommendation", row: saveState.rowNumber, provider: data.aiProvider || "gemini" }) });
       const result = await response.json();
       if (!result.ok) throw new Error(result.error || "生成失敗");
       setRecommendState({ status: "success", error: "", result: result.result });
