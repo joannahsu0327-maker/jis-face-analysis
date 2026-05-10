@@ -885,7 +885,7 @@ function SingleSelectTagGroup({ title, groups, value, onChange }) {
 function ProgressRail({ current, setCurrent, data, setData }) {
   return (
     <header className="mb-8 rounded-[2rem] bg-gradient-to-r from-stone-950 via-stone-900 to-stone-800 p-5 shadow-2xl shadow-stone-900/25">
-      <div className="grid gap-6 xl:grid-cols-[260px_1fr_360px] xl:items-start">
+      <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)_320px] xl:items-start">
         <div className="flex items-center gap-3">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-sm font-bold tracking-widest text-white shadow-lg shadow-rose-500/40">
             JIS
@@ -903,7 +903,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
               Step {current} / {steps.length - 1} · {steps[current]?.label || "臉型 FS"}
             </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex flex-wrap gap-2 pb-1">
             {steps.filter((step) => step.id !== "basic").map((step, index) => {
               const stepIndex = index + 1;
               const active = current === stepIndex;
@@ -913,7 +913,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
                   type="button"
                   onClick={() => setCurrent(stepIndex)}
                   className={cx(
-                    "flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm transition-all duration-200",
+                    "flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2.5 text-sm transition-all duration-200",
                     active
                       ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
                       : "bg-stone-800/70 text-stone-400 hover:bg-stone-700 hover:text-white"
@@ -927,7 +927,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
           </div>
         </div>
 
-        <div className="rounded-[1.75rem] border border-white/10 bg-white/8 p-4 backdrop-blur">
+        <div className="min-w-0 rounded-[1.75rem] border border-white/10 bg-white/8 p-4 backdrop-blur">
           <div className="mb-3">
             <div className="text-xs uppercase tracking-[0.18em] text-white/35">Case Setup</div>
             <div className="mt-1 text-base font-semibold text-white">建立個案資料</div>
@@ -938,7 +938,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
               <input
                 value={data.clientName}
                 onChange={(e) => setData((prev) => ({ ...prev, clientName: e.target.value }))}
-                className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-rose-300"
+                className="w-full min-w-0 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-rose-300"
                 placeholder="例如：A小姐"
               />
             </div>
@@ -947,7 +947,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
               <select
                 value={data.need}
                 onChange={(e) => setData((prev) => ({ ...prev, need: e.target.value }))}
-                className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-rose-300"
+                className="w-full min-w-0 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-rose-300"
               >
                 <option className="text-stone-900">完整形象報告</option>
                 <option className="text-stone-900">髮型建議</option>
