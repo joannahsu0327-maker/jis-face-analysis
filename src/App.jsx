@@ -963,6 +963,32 @@ function ProgressRail({ current, setCurrent, data, setData }) {
   );
 }
 
+function StepNavigator({ current, jumpToStep }) {
+  return (
+    <div className="mb-8 flex items-center justify-between">
+      <button
+        type="button"
+        onClick={() => jumpToStep(Math.max(1, current - 1))}
+        disabled={current <= 1}
+        className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        ← 上一步
+      </button>
+      <div className="rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">
+        {current} / {steps.length - 1}
+      </div>
+      <button
+        type="button"
+        onClick={() => jumpToStep(Math.min(steps.length - 1, current + 1))}
+        disabled={current === steps.length - 1}
+        className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        下一步 →
+      </button>
+    </div>
+  );
+}
+
 function ApiNotice({ apiState }) {
   const isSuccess = apiState.status === "success";
   return (
@@ -1639,11 +1665,7 @@ export default function App() {
 
           <main className="min-h-[650px] rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200/60 md:p-10">
           <div ref={contentTopRef} className="scroll-mt-32" />
-          <div className="mb-8 flex items-center justify-between">
-            <button type="button" onClick={() => jumpToStep(Math.max(1, current - 1))} disabled={current <= 1} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30">← 上一步</button>
-            <div className="rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">{current} / {steps.length - 1}</div>
-            <button type="button" onClick={() => jumpToStep(Math.min(steps.length - 1, current + 1))} disabled={current === steps.length - 1} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30">下一步 →</button>
-          </div>
+          <StepNavigator current={current} jumpToStep={jumpToStep} />
 
           {current === 0 && <div className="rounded-3xl bg-stone-50 p-6 text-sm leading-6 text-stone-600">基本資料已固定在左側，請從上方選擇臉型 FS 開始分析。</div>}
           {current === 1 && <AnalysisPanel title="臉型分析 FS" description="判斷臉部輪廓與骨架感。" label="選擇臉型" options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} apiState={apiStates.face} onReload={() => reloadOptionGroup("face")} selectorOverride={<FaceShapeGrid options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} loading={apiStates.face.status === "loading" && options.face.length === 0} />}><GroupedCheckboxTagGroup title={observationTagGroups.faceDetailTags.title} hint={observationTagGroups.faceDetailTags.hint} sections={faceDetailTagSections} value={data.faceDetailTags || []} onChange={(next) => handleMainChange("faceDetailTags", next)} /></AnalysisPanel>}
@@ -1874,6 +1896,10 @@ export default function App() {
             </AnalysisPanel>
           )}
           {current === 7 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} onGenerateRecommendation={handleGenerateRecommendation} />}
+
+          <div className="mt-10 border-t border-stone-100 pt-8">
+            <StepNavigator current={current} jumpToStep={jumpToStep} />
+          </div>
         </main>
         </div>
       </div>
