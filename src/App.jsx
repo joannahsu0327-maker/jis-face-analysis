@@ -1024,7 +1024,7 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
       <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
         <div className="mb-2 text-sm font-semibold text-stone-900">AI 輔助判讀</div>
         <div className="mb-4 text-xs leading-5 text-stone-500">
-          先依照片輔助判斷：AI 初判臉型、比例、直曲、量感、風格、年齡感；也可輔助估算三庭五眼。
+          先依照片輔助判斷臉型、比例、直曲、量感、風格與年齡感；三庭比例請使用點位偵測或人工量測確認。
         </div>
 
         <div className="mb-4 rounded-3xl border border-rose-100 bg-rose-50/40 p-4">
@@ -1051,7 +1051,7 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
 
         {aiState.error && <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">{aiState.error}</div>}
         {landmarkState.error && <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{landmarkState.error}</div>}
-        {landmarkState.status === "success" && <div className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">已用 MediaPipe 臉部點位估算臉長、臉寬與三庭比例；這不是 AI 猜數字，仍請人工確認。</div>}
+        {landmarkState.status === "success" && <div className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">已完成點位偵測：系統已依臉部關鍵點估算臉長、臉寬與三庭比例。此數值為輔助參考，請依照片狀態與顧問判斷微調後再儲存。</div>}
 
         {aiState.result && (
           <div className="mt-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">
@@ -1063,7 +1063,7 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
       <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
         <div className="mb-4">
           <div className="text-sm font-semibold text-stone-900">點位估算／人工量測</div>
-          <div className="mt-1 text-xs text-stone-500">可用 MediaPipe 點位先估算，再由妳人工修正；若手動輸入 cm 或 mm，同一位個案請統一單位。</div>
+          <div className="mt-1 text-xs text-stone-500">可先用點位偵測取得比例參考，再由顧問依照片人工修正；若手動輸入 cm 或 mm，同一位個案請統一單位。</div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           {["faceLength", "faceWidth", "upperThird", "middleThird", "lowerThird"].map((key) => (
