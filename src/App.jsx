@@ -1022,7 +1022,16 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
 
           <div className="grid gap-2">
             {summaryRows.map(([label, value, targetStep]) => (
-              <button key={label} type="button" onClick={() => setCurrent(targetStep || 1)} className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3 text-left text-xs transition hover:bg-stone-100">
+              <button
+                key={label}
+                type="button"
+                disabled={!targetStep}
+                onClick={() => targetStep && setCurrent(targetStep)}
+                className={cx(
+                  "flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3 text-left text-xs transition",
+                  targetStep ? "hover:bg-stone-100" : "cursor-default"
+                )}
+              >
                 <span className="text-stone-400">{label}</span>
                 <span className="font-medium text-stone-800">{value}</span>
               </button>
@@ -1043,7 +1052,7 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
 
           <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
 
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-[150px] w-full items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-3 text-center transition hover:border-stone-400 hover:bg-stone-100 md:h-[170px]">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="mx-auto flex aspect-[3/4] w-full max-w-[320px] items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-3 text-center transition hover:border-stone-400 hover:bg-stone-100">
             {data.photo ? (
               <img src={data.photo} alt="個案照片" className="h-full w-full rounded-2xl object-contain" />
             ) : (
