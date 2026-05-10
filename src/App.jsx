@@ -882,71 +882,84 @@ function SingleSelectTagGroup({ title, groups, value, onChange }) {
   );
 }
 
-function ProgressRail({ current, setCurrent }) {
+function ProgressRail({ current, setCurrent, data, setData }) {
   return (
-    <aside className="rounded-3xl bg-gradient-to-b from-stone-900 to-stone-800 p-5 shadow-2xl shadow-stone-900/30">
-      <div className="mb-8 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/40 text-xs font-bold tracking-widest">
-          JIS
+    <header className="mb-8 rounded-[2rem] bg-gradient-to-r from-stone-950 via-stone-900 to-stone-800 p-5 shadow-2xl shadow-stone-900/25">
+      <div className="grid gap-6 xl:grid-cols-[260px_1fr_360px] xl:items-start">
+        <div className="flex items-center gap-3">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-sm font-bold tracking-widest text-white shadow-lg shadow-rose-500/40">
+            JIS
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-stone-500">Joanna Image System</div>
+            <h1 className="text-xl font-semibold leading-tight text-white">顏分析顧問系統</h1>
+          </div>
         </div>
-        <div>
-          <div className="text-[10px] tracking-[0.18em] uppercase text-stone-500">Joanna Image System</div>
-          <h1 className="text-base font-semibold leading-tight text-white">顏分析顧問系統</h1>
-        </div>
-      </div>
 
-      <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-600">分析進度</div>
-      <div className="space-y-1">
-        {steps.map((step, index) => {
-          const active = current === index;
-          const done = current > index;
-          return (
-            <button
-              key={step.id}
-              type="button"
-              onClick={() => setCurrent(index)}
-              className={cx(
-                "flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left transition-all duration-200",
-                active
-                  ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
-                  : done
-                  ? "text-stone-400 hover:bg-stone-700/60"
-                  : "text-stone-500 hover:bg-stone-700/50"
-              )}
-            >
-              <span className="flex items-center gap-3">
-                <span
+        <div>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="text-xs font-medium text-stone-500">分析步驟切換</div>
+            <div className="rounded-full bg-stone-800 px-4 py-2 text-xs font-medium text-stone-400">
+              Step {current} / {steps.length - 1} · {steps[current]?.label || "臉型 FS"}
+            </div>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {steps.filter((step) => step.id !== "basic").map((step, index) => {
+              const stepIndex = index + 1;
+              const active = current === stepIndex;
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => setCurrent(stepIndex)}
                   className={cx(
-                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-semibold",
+                    "flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-sm transition-all duration-200",
                     active
-                      ? "bg-white/20 text-white"
-                      : done
-                      ? "bg-emerald-500/25 text-emerald-400"
-                      : "bg-stone-700/80 text-stone-500"
+                      ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
+                      : "bg-stone-800/70 text-stone-400 hover:bg-stone-700 hover:text-white"
                   )}
                 >
-                  {done ? "✓" : step.icon}
-                </span>
-                <span className="text-sm font-medium">{step.label}</span>
-              </span>
-              <span className={cx("text-base transition-opacity", active ? "opacity-100 text-white" : "opacity-20")}>›</span>
-            </button>
-          );
-        })}
-      </div>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/10 text-xs">{step.icon}</span>
+                  <span className="font-medium">{step.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-      <div className="mt-8 rounded-xl bg-stone-700/40 px-4 py-3">
-        <div className="text-[10px] leading-5 text-stone-500">
-          Step {current + 1} of {steps.length} · {steps[current]?.label}
-        </div>
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-stone-700">
-          <div
-            className="h-full rounded-full bg-rose-400 transition-all duration-500"
-            style={{ width: `${((current + 1) / steps.length) * 100}%` }}
-          />
+        <div className="rounded-[1.75rem] border border-white/10 bg-white/8 p-4 backdrop-blur">
+          <div className="mb-3">
+            <div className="text-xs uppercase tracking-[0.18em] text-white/35">Case Setup</div>
+            <div className="mt-1 text-base font-semibold text-white">建立個案資料</div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <div className="mb-1 text-xs text-white/45">個案姓名 / 代號</div>
+              <input
+                value={data.clientName}
+                onChange={(e) => setData((prev) => ({ ...prev, clientName: e.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/30 focus:border-rose-300"
+                placeholder="例如：A小姐"
+              />
+            </div>
+            <div>
+              <div className="mb-1 text-xs text-white/45">主要需求</div>
+              <select
+                value={data.need}
+                onChange={(e) => setData((prev) => ({ ...prev, need: e.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none focus:border-rose-300"
+              >
+                <option className="text-stone-900">完整形象報告</option>
+                <option className="text-stone-900">髮型建議</option>
+                <option className="text-stone-900">妝容調整</option>
+                <option className="text-stone-900">眼鏡 / 飾品</option>
+                <option className="text-stone-900">形象照前建議</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
-    </aside>
+    </header>
   );
 }
 
@@ -960,13 +973,19 @@ function ApiNotice({ apiState }) {
   );
 }
 
-function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates, landmarkState, onLandmarkMeasure }) {
+function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState, onSaveCustomer, setCurrent }) {
   const fileInputRef = useRef(null);
-  const measurementResult = useMemo(() => calculateFaceMeasurements(data.measurements || {}), [data.measurements]);
-  const isSyncing = Object.values(apiStates).some((s) => s.status === "loading");
+  const connectedCount = Object.values(apiStates || {}).filter((state) => state.status === "success").length;
 
-  const updateMeasurement = (key, value) => setData((prev) => ({ ...prev, measurements: { ...(prev.measurements || {}), [key]: value } }));
-  const updateField = (key, value) => setData((prev) => ({ ...prev, [key]: value }));
+  const summaryRows = [
+    ["臉型", getName(options.face, data.face), 1],
+    ["比例", getName(options.ratio, data.ratio), 2],
+    ["年齡感", getName(options.age, data.age), 3],
+    ["直曲", getName(options.line, data.line), 4],
+    ["量感", getName(options.volume, data.volume), 5],
+    ["風格", getName(options.style, data.style), 6],
+    ["色彩季型補充", data.colorSeason || "未選擇", 0],
+  ];
 
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
@@ -977,49 +996,89 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
   };
 
   return (
+    <section className="mb-8 rounded-[2rem] border border-stone-200 bg-white/95 p-4 shadow-xl shadow-stone-200/70 backdrop-blur md:p-5">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">Consultant View</div>
+          <h2 className="mt-1 text-lg font-semibold text-stone-900">固定觀察區</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-600">{connectedCount}/6 已讀取</span>
+          <button type="button" disabled={saveState?.status === "loading"} onClick={onSaveCustomer} className="rounded-full bg-stone-900 px-4 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">
+            {saveState?.status === "loading" ? "儲存中…" : "儲存個案到 01"}
+          </button>
+        </div>
+      </div>
+
+      {saveState?.status === "success" && <div className="mb-4 rounded-2xl bg-emerald-50 px-4 py-2 text-xs leading-5 text-emerald-700">已儲存至第 {saveState.rowNumber} 列。</div>}
+      {saveState?.error && <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-2 text-xs leading-5 text-rose-700">{saveState.error}</div>}
+
+      <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold text-stone-900">人像照片</div>
+              <div className="mt-1 text-xs text-stone-400">分析過程中固定顯示</div>
+            </div>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-700 hover:bg-stone-50">
+              {data.photo ? "更換照片" : "上傳照片"}
+            </button>
+          </div>
+
+          <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-[180px] w-full items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-3 text-center transition hover:border-stone-400 hover:bg-stone-100 md:h-[220px]">
+            {data.photo ? (
+              <img src={data.photo} alt="個案照片" className="h-full w-full rounded-2xl object-contain" />
+            ) : (
+              <div>
+                <div className="text-3xl">📷</div>
+                <div className="mt-2 text-sm font-medium text-stone-700">先上傳正面照</div>
+                <div className="mt-1 text-xs text-stone-400">照片會固定在上方方便比對</div>
+              </div>
+            )}
+          </button>
+        </div>
+
+        <div>
+          <div className="mb-3">
+            <div className="text-sm font-semibold text-stone-900">目前判斷摘要</div>
+            <div className="mt-1 text-xs text-stone-400">操作 FS / RT / AG / LC / VM / ST 時可隨時確認</div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {summaryRows.map(([label, value, targetStep]) => (
+              <button key={label} type="button" onClick={() => setCurrent(targetStep)} className="flex items-center justify-between rounded-3xl bg-stone-50 px-5 py-4 text-left text-sm transition hover:bg-stone-100">
+                <span className="text-stone-400">{label}</span>
+                <span className="font-medium text-stone-800">{value}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates, landmarkState, onLandmarkMeasure }) {
+  const measurementResult = useMemo(() => calculateFaceMeasurements(data.measurements || {}), [data.measurements]);
+  const isSyncing = Object.values(apiStates).some((s) => s.status === "loading");
+
+  const updateMeasurement = (key, value) => setData((prev) => ({ ...prev, measurements: { ...(prev.measurements || {}), [key]: value } }));
+  const updateField = (key, value) => setData((prev) => ({ ...prev, [key]: value }));
+
+
+  return (
     <section className="space-y-6">
       <header className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-stone-900">建立個案資料</h2>
-          <p className="mt-2 text-stone-500">先上傳照片，再做量測與 AI 初判。</p>
+          <h2 className="text-2xl font-semibold text-stone-900">AI 判讀與量測</h2>
+          <p className="mt-2 text-stone-500">上傳照片後，再進行 AI 初判、點位偵測與人工修正。</p>
         </div>
         <button type="button" onClick={onSyncAll} disabled={isSyncing} className={cx("flex h-10 w-10 items-center justify-center rounded-full border transition", isSyncing ? "border-stone-300 bg-stone-100" : "border-stone-200 bg-white hover:bg-stone-50")}>
           <span className={cx("text-lg", isSyncing && "animate-spin")}>⟳</span>
         </button>
       </header>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <Field label="個案姓名 / 代號">
-          <input value={data.clientName} onChange={(e) => setData({ ...data, clientName: e.target.value })} className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：A小姐" />
-        </Field>
-        <Field label="主要需求">
-          <select value={data.need} onChange={(e) => setData({ ...data, need: e.target.value })} className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400">
-            <option>完整形象報告</option>
-            <option>髮型建議</option>
-            <option>妝容調整</option>
-            <option>眼鏡 / 飾品</option>
-            <option>形象照前建議</option>
-          </select>
-        </Field>
-      </div>
-
-      <Field label="上傳照片" hint="建議自然光、正面、無濾鏡。">
-        <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-        <button type="button" onClick={() => fileInputRef.current?.click()} className="group relative flex min-h-80 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-4 text-center transition hover:border-stone-400 hover:bg-stone-100">
-          {data.photo ? (
-            <>
-              <img src={data.photo} alt="Preview" className="h-80 w-full rounded-2xl object-contain" />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover:opacity-100"><span className="text-sm font-medium text-white">點擊更換照片</span></div>
-            </>
-          ) : (
-            <>
-              <div className="mb-3 text-3xl text-stone-500">📷</div>
-              <div className="font-medium text-stone-800">先上傳正面照</div>
-              <div className="mt-1 text-sm text-stone-500">後續 AI 與量測會依這張照片進行</div>
-            </>
-          )}
-        </button>
-      </Field>
 
       <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
         <div className="mb-2 text-sm font-semibold text-stone-900">AI 輔助判讀</div>
@@ -1083,71 +1142,6 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
             <div className="text-stone-500">三庭比例</div>
             <div className="mt-1 font-semibold text-stone-900">{measurementResult.upperPct ? `${measurementResult.upperPct.toFixed(0)} : ${measurementResult.middlePct.toFixed(0)} : ${measurementResult.lowerPct.toFixed(0)}` : "-"}</div>
             <div className="mt-1 text-xs text-stone-500">{measurementResult.thirdsLabel}</div>
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-5">
-          <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-            <div className="mb-5 flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-xl text-rose-700">◉</div>
-              <div>
-                <div className="text-lg font-semibold text-stone-900">五眼／眼距觀察</div>
-                <div className="mt-1 text-sm leading-6 text-stone-500">快速勾選觀察條件，系統會自動組成文字。</div>
-              </div>
-            </div>
-
-            <div className="rounded-[1.75rem] border border-stone-100 bg-stone-50/60 p-5">
-              <div className="grid gap-3">
-                {[
-                  ["eyeDistance", "眼間距", "◐", ["較開", "正常", "較近"]],
-                  ["featureDistribution", "五官分布", "✦", ["集中", "均勻", "分散"]],
-                  ["faceBlank", "臉部留白", "○", ["多", "適中"]],
-                  ["visualFocus", "視覺重心", "⌖", ["上", "中", "下"]],
-                ].map(([key, label, icon, items]) => (
-                  <div key={key} className="rounded-3xl border border-stone-100 bg-white p-4 shadow-sm md:flex md:items-center md:justify-between md:gap-5">
-                    <div className="mb-3 flex items-center gap-3 md:mb-0 md:w-32 md:shrink-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-sm text-rose-700">{icon}</div>
-                      <div className="whitespace-nowrap text-base font-semibold text-stone-900">{label}</div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 md:justify-end">
-                      {items.map((item) => {
-                        const active = data[key] === item;
-                        return (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => updateField(key, active ? "" : item)}
-                            className={cx(
-                              "min-w-20 rounded-full border px-4 py-2.5 text-center text-sm font-medium transition",
-                              active
-                                ? "border-stone-900 bg-stone-900 text-white shadow-sm"
-                                : "border-rose-200 bg-rose-50/40 text-stone-700 hover:border-rose-400 hover:bg-rose-50"
-                            )}
-                          >
-                            {active ? "✓ " : ""}{item}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-[1.75rem] bg-rose-50/40 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-800">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-rose-700">▤</span>
-                觀察文字預覽
-              </div>
-              <div className="rounded-2xl border border-dashed border-rose-200 bg-white px-4 py-3 text-sm leading-6 text-stone-600">
-                {[
-                  data.eyeDistance ? `眼間距${data.eyeDistance}` : "",
-                  data.featureDistribution ? `五官${data.featureDistribution}` : "",
-                  data.faceBlank ? `臉部留白${data.faceBlank}` : "",
-                  data.visualFocus ? `視覺重心在${data.visualFocus}` : "",
-                ].filter(Boolean).join("、") || "尚未選擇"}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1228,8 +1222,44 @@ function ConsultantReportCard({ report }) {
   );
 }
 
+function buildDirectionNotes(data, options) {
+  const records = {
+    face: getRecord(options.face, data.face),
+    ratio: getRecord(options.ratio, data.ratio),
+    line: getRecord(options.line, data.line),
+    volume: getRecord(options.volume, data.volume),
+    style: getRecord(options.style, data.style),
+    age: getRecord(options.age, data.age),
+  };
+
+  const notes = [];
+  const push = (label, value) => {
+    if (value) notes.push(`${label}：${value}`);
+  };
+
+  push("臉型修飾", records.face?.direction);
+  push("比例修飾", records.ratio?.direction);
+  push("線條方向", records.line?.direction);
+  push("量感修飾", records.volume?.direction);
+  push("風格方向", records.style?.direction);
+  push("年齡感方向", records.age?.direction);
+
+  const collect = (key) => [records.face?.[key], records.ratio?.[key], records.line?.[key], records.volume?.[key], records.style?.[key], records.age?.[key]].filter(Boolean).join("｜");
+
+  push("髮型策略", collect("hairDirection"));
+  push("瀏海策略", collect("bangDirection"));
+  push("分線策略", collect("partDirection"));
+  push("眼鏡策略", collect("glassesDirection"));
+  push("耳環策略", collect("earringsDirection"));
+  push("妝容策略", collect("makeupDirection"));
+  push("避免策略", [collect("avoidDirection"), records.line?.avoidHairDirection].filter(Boolean).join("｜"));
+
+  return notes.length ? notes : ["請完成前方分析，系統會在這裡整理修飾方向。"];
+}
+
 function RecommendPanel({ data, options, saveState, recommendState, onGenerateRecommendation }) {
   const report = useMemo(() => buildConsultantReport(data, options, recommendState?.result), [data, options, recommendState?.result]);
+  const directionNotes = useMemo(() => buildDirectionNotes(data, options), [data, options]);
   const summary = [
     `臉型：${getName(options.face, data.face)}`,
     `比例：${getName(options.ratio, data.ratio)}`,
@@ -1253,6 +1283,21 @@ function RecommendPanel({ data, options, saveState, recommendState, onGenerateRe
       {recommendState?.error && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{recommendState.error}</div>}
       {recommendState?.status === "success" && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">已生成並寫入 01 客戶分析 S～W 欄。</div>}
       <div className="rounded-3xl border border-stone-200 bg-white p-5"><div className="mb-4 text-sm font-semibold text-stone-800">分析摘要</div><div className="grid gap-3 md:grid-cols-2">{summary.map((item) => <div key={item} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-700">{item}</div>)}</div></div>
+
+      <div className="rounded-3xl border border-stone-200 bg-white p-5">
+        <div className="mb-4 text-sm font-semibold text-stone-800">修飾目標標籤</div>
+        <div className="flex flex-wrap gap-2">
+          {(data.correctionGoalTags || []).length ? (data.correctionGoalTags || []).map((tag) => (
+            <span key={tag} className="rounded-full bg-rose-50 px-4 py-2 text-sm text-rose-700">{tag}</span>
+          )) : <div className="text-sm text-stone-400">尚未選擇修飾目標標籤</div>}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-stone-200 bg-white p-5">
+        <div className="mb-4 text-sm font-semibold text-stone-800">修飾方向</div>
+        <div className="space-y-2">{directionNotes.map((note) => <div key={note} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">{note}</div>)}</div>
+      </div>
+
       <ConsultantReportCard report={report} />
     </section>
   );
@@ -1368,7 +1413,7 @@ function InsightPanel({ data, options, apiStates, saveState, onSaveCustomer, set
 }
 
 export default function App() {
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(1);
   const contentTopRef = useRef(null);
 
   const jumpToStep = (step) => {
@@ -1386,7 +1431,7 @@ export default function App() {
     ageAssessment: {}, lineAssessment: {},
     eyeDistance: "", featureDistribution: "", faceBlank: "", visualFocus: "",
     faceDetailTags: [], ratioFocusTags: [], featureStructureTags: [], correctionGoalTags: [], styleSupplementTags: [],
-    face: "FS03", ratio: "RT07", line: "LC04", volume: "VM02", style: "ST04", age: "AG04",
+    face: "", ratio: "", line: "", volume: "", style: "", age: "",
   });
   const [aiState, setAiState] = useState({ status: "idle", error: "", result: null, mapped: null });
   const [landmarkState, setLandmarkState] = useState({ status: "idle", error: "" });
@@ -1574,20 +1619,94 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-stone-50 p-4 font-sans text-stone-900 md:p-8 selection:bg-rose-500 selection:text-white">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[280px_1fr_340px]">
-        <ProgressRail current={current} setCurrent={jumpToStep} />
+      <div className="mx-auto max-w-7xl">
+        <ProgressRail current={current} setCurrent={jumpToStep} data={data} setData={setData} />
 
-        <main className="min-h-[650px] rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200/60 md:p-10">
-          <div ref={contentTopRef} className="scroll-mt-6" />
+        <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
+          <aside className="space-y-6 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto">
+            <StickyPhotoSummaryPanel data={data} setData={setData} options={options} apiStates={apiStates} saveState={saveState} onSaveCustomer={handleSaveCustomer} setCurrent={jumpToStep} />
+            <BasicPanel data={data} setData={setData} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} />
+          </aside>
+
+          <main className="min-h-[650px] rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200/60 md:p-10">
+          <div ref={contentTopRef} className="scroll-mt-32" />
           <div className="mb-8 flex items-center justify-between">
-            <button type="button" onClick={() => jumpToStep(Math.max(0, current - 1))} disabled={current === 0} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30">← 上一步</button>
-            <div className="rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">{current + 1} / {steps.length}</div>
+            <button type="button" onClick={() => jumpToStep(Math.max(1, current - 1))} disabled={current <= 1} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30">← 上一步</button>
+            <div className="rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">{current} / {steps.length - 1}</div>
             <button type="button" onClick={() => jumpToStep(Math.min(steps.length - 1, current + 1))} disabled={current === steps.length - 1} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30">下一步 →</button>
           </div>
 
-          {current === 0 && <BasicPanel data={data} setData={setData} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} />}
+          {current === 0 && <div className="rounded-3xl bg-stone-50 p-6 text-sm leading-6 text-stone-600">基本資料已固定在左側，請從上方選擇臉型 FS 開始分析。</div>}
           {current === 1 && <AnalysisPanel title="臉型分析 FS" description="判斷臉部輪廓與骨架感。" label="選擇臉型" options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} apiState={apiStates.face} onReload={() => reloadOptionGroup("face")} selectorOverride={<FaceShapeGrid options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} loading={apiStates.face.status === "loading" && options.face.length === 0} />}><GroupedCheckboxTagGroup title={observationTagGroups.faceDetailTags.title} hint={observationTagGroups.faceDetailTags.hint} sections={faceDetailTagSections} value={data.faceDetailTags || []} onChange={(next) => handleMainChange("faceDetailTags", next)} /></AnalysisPanel>}
-          {current === 2 && <AnalysisPanel title="比例分析 RT" description="判斷三庭比例與重心。" label="選擇比例特徵" options={options.ratio} value={data.ratio} onChange={(val) => handleMainChange("ratio", val)} apiState={apiStates.ratio} onReload={() => reloadOptionGroup("ratio")}><div className="space-y-4"><CheckboxTagGroup title={observationTagGroups.ratioFocusTags.title} hint={observationTagGroups.ratioFocusTags.hint} options={observationTagGroups.ratioFocusTags.options} value={data.ratioFocusTags || []} onChange={(next) => handleMainChange("ratioFocusTags", next)} /><CheckboxTagGroup title={observationTagGroups.featureStructureTags.title} hint={observationTagGroups.featureStructureTags.hint} options={observationTagGroups.featureStructureTags.options} value={data.featureStructureTags || []} onChange={(next) => handleMainChange("featureStructureTags", next)} /></div></AnalysisPanel>}
+          {current === 2 && <AnalysisPanel title="比例分析 RT" description="判斷三庭比例、五眼眼距與視覺重心。" label="選擇比例特徵" options={options.ratio} value={data.ratio} onChange={(val) => handleMainChange("ratio", val)} apiState={apiStates.ratio} onReload={() => reloadOptionGroup("ratio")}>
+            <div className="space-y-4">
+              <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+                <div className="mb-5 flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-xl text-rose-700">◉</div>
+                  <div>
+                    <div className="text-lg font-semibold text-stone-900">五眼／眼距觀察</div>
+                    <div className="mt-1 text-sm leading-6 text-stone-500">此區屬於比例判斷，用來補充眼距、五官分布、臉部留白與視覺重心。</div>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.75rem] border border-stone-100 bg-stone-50/60 p-5">
+                  <div className="grid gap-3">
+                    {[
+                      ["eyeDistance", "眼間距", "◐", ["較開", "正常", "較近"]],
+                      ["featureDistribution", "五官分布", "✦", ["集中", "均勻", "分散"]],
+                      ["faceBlank", "臉部留白", "○", ["多", "適中"]],
+                      ["visualFocus", "視覺重心", "⌖", ["上", "中", "下"]],
+                    ].map(([key, label, icon, items]) => (
+                      <div key={key} className="rounded-3xl border border-stone-100 bg-white p-4 shadow-sm md:flex md:items-center md:justify-between md:gap-5">
+                        <div className="mb-3 flex items-center gap-3 md:mb-0 md:w-32 md:shrink-0">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-sm text-rose-700">{icon}</div>
+                          <div className="whitespace-nowrap text-base font-semibold text-stone-900">{label}</div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 md:justify-end">
+                          {items.map((item) => {
+                            const active = data[key] === item;
+                            return (
+                              <button
+                                key={item}
+                                type="button"
+                                onClick={() => handleMainChange(key, active ? "" : item)}
+                                className={cx(
+                                  "min-w-20 rounded-full border px-4 py-2.5 text-center text-sm font-medium transition",
+                                  active
+                                    ? "border-stone-900 bg-stone-900 text-white shadow-sm"
+                                    : "border-rose-200 bg-rose-50/40 text-stone-700 hover:border-rose-400 hover:bg-rose-50"
+                                )}
+                              >
+                                {active ? "✓ " : ""}{item}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-[1.75rem] bg-rose-50/40 p-4">
+                  <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-800">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-rose-700">▤</span>
+                    觀察文字預覽
+                  </div>
+                  <div className="rounded-2xl border border-dashed border-rose-200 bg-white px-4 py-3 text-sm leading-6 text-stone-600">
+                    {[
+                      data.eyeDistance ? `眼間距${data.eyeDistance}` : "",
+                      data.featureDistribution ? `五官${data.featureDistribution}` : "",
+                      data.faceBlank ? `臉部留白${data.faceBlank}` : "",
+                      data.visualFocus ? `視覺重心在${data.visualFocus}` : "",
+                    ].filter(Boolean).join("、") || "尚未選擇"}
+                  </div>
+                </div>
+              </div>
+
+              <CheckboxTagGroup title={observationTagGroups.ratioFocusTags.title} hint={observationTagGroups.ratioFocusTags.hint} options={observationTagGroups.ratioFocusTags.options} value={data.ratioFocusTags || []} onChange={(next) => handleMainChange("ratioFocusTags", next)} />
+              <CheckboxTagGroup title={observationTagGroups.featureStructureTags.title} hint={observationTagGroups.featureStructureTags.hint} options={observationTagGroups.featureStructureTags.options} value={data.featureStructureTags || []} onChange={(next) => handleMainChange("featureStructureTags", next)} />
+            </div>
+          </AnalysisPanel>}
           {current === 4 && (
             <AnalysisPanel
               title="直曲分析 LC"
@@ -1747,8 +1866,7 @@ export default function App() {
           )}
           {current === 7 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} onGenerateRecommendation={handleGenerateRecommendation} />}
         </main>
-
-        <InsightPanel data={data} options={options} apiStates={apiStates} saveState={saveState} onSaveCustomer={handleSaveCustomer} setData={setData} setSaveState={setSaveState} setRecommendState={setRecommendState} setCurrent={jumpToStep} />
+        </div>
       </div>
     </div>
   );
