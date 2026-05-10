@@ -11,7 +11,7 @@ async function loadMediapipe() {
 }
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbwk6ZFFQgA5z2Ct-YUKPjGj50dK9OfP-sDzoW4TEdh91OIgjXOnayiZ5sRpbqWRxiZYww/exec";
+  "https://script.google.com/macros/s/AKfycbwAiyfyz0HeTgalFwradj-ONapV-Cwug_rGF_qR7MV0f4SFUiTvbeBBGcELu-R23Rlcaw/exec";
 
 // AI 按鈕統一走 GAS 後端，不在前端放 Gemini API Key。
 
@@ -1040,13 +1040,13 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
           </button>
 
           <button type="button" disabled={!data.photo || landmarkState.status === "loading"} onClick={onLandmarkMeasure} className="rounded-full border border-stone-200 bg-white px-5 py-2 text-sm text-stone-700 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-30">
-            {landmarkState.status === "loading" ? "點位偵測中…" : "AI 初判三庭五眼"}
+            {landmarkState.status === "loading" ? "點位偵測中…" : "點位偵測三庭比例"}
           </button>
         </div>
 
         {aiState.error && <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">{aiState.error}</div>}
         {landmarkState.error && <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{landmarkState.error}</div>}
-        {landmarkState.status === "success" && <div className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">已依照片輔助估算三庭五眼，請再人工確認。</div>}
+        {landmarkState.status === "success" && <div className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">已用 MediaPipe 臉部點位估算臉長、臉寬與三庭比例；這不是 AI 猜數字，仍請人工確認。</div>}
 
         {aiState.result && (
           <div className="mt-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">
@@ -1057,8 +1057,8 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
 
       <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
         <div className="mb-4">
-          <div className="text-sm font-semibold text-stone-900">實際量測</div>
-          <div className="mt-1 text-xs text-stone-500">單位可用 cm 或 mm，但同一位個案請統一單位。</div>
+          <div className="text-sm font-semibold text-stone-900">點位估算／人工量測</div>
+          <div className="mt-1 text-xs text-stone-500">可用 MediaPipe 點位先估算，再由妳人工修正；若手動輸入 cm 或 mm，同一位個案請統一單位。</div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           {["faceLength", "faceWidth", "upperThird", "middleThird", "lowerThird"].map((key) => (
@@ -1423,25 +1423,47 @@ export default function App() {
   const handleLandmarkMeasure = async () => {
     if (!data.photo) return;
     setLandmarkState({ status: "loading", error: "" });
+
     try {
-      const result = await requestAIProportionAnalysis(data.photo, data.aiProvider || "gemini");
+      const img = await loadImageFromBase64(data.photo);
+      const landmarker = await getFaceLandmarker();
+      const detection = landmarker.detect(img);
+      const landmarks = detection?.faceLandmarks?.[0];
+
+      if (!landmarks || !landmarks.length) {
+        throw new Error("沒有偵測到清楚臉部點位，請換一張正面、光線充足、臉部完整的照片。 ");
+      }
+
+      const measured = estimateMeasurementsFromLandmarks(
+        landmarks,
+        img.naturalWidth || img.width,
+        img.naturalHeight || img.height
+      );
+
+      const measurementResult = calculateFaceMeasurements(measured);
+      let focusTag = "視覺重心平衡";
+      if (measurementResult.upperPct && measurementResult.middlePct && measurementResult.lowerPct) {
+        const values = [
+          { tag: "視覺重心偏上", value: measurementResult.upperPct },
+          { tag: "視覺重心平衡", value: measurementResult.middlePct },
+          { tag: "視覺重心偏下", value: measurementResult.lowerPct },
+        ];
+        const maxItem = values.sort((a, b) => b.value - a.value)[0];
+        const minValue = Math.min(measurementResult.upperPct, measurementResult.middlePct, measurementResult.lowerPct);
+        focusTag = maxItem.value - minValue <= 6 ? "視覺重心平衡" : maxItem.tag;
+      }
 
       setData((prev) => ({
         ...prev,
         measurements: {
           ...(prev.measurements || {}),
-          faceLength: result.faceLength || prev.measurements?.faceLength || "",
-          faceWidth: result.faceWidth || prev.measurements?.faceWidth || "",
-          upperThird: result.upperThird || prev.measurements?.upperThird || "",
-          middleThird: result.middleThird || prev.measurements?.middleThird || "",
-          lowerThird: result.lowerThird || prev.measurements?.lowerThird || "",
+          faceLength: measured.faceLength || prev.measurements?.faceLength || "",
+          faceWidth: measured.faceWidth || prev.measurements?.faceWidth || "",
+          upperThird: measured.upperThird || prev.measurements?.upperThird || "",
+          middleThird: measured.middleThird || prev.measurements?.middleThird || "",
+          lowerThird: measured.lowerThird || prev.measurements?.lowerThird || "",
         },
-        eyeObservation: [
-          result.eyeObservation || "",
-          result.featureDistribution || "",
-          result.blankSpaceObservation || "",
-        ].filter(Boolean).join("\n"),
-        ratioFocusTags: result.ratioFocusTags || prev.ratioFocusTags || [],
+        ratioFocusTags: [focusTag],
       }));
 
       setLandmarkState({ status: "success", error: "" });
