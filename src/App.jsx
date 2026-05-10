@@ -11,7 +11,7 @@ async function loadMediapipe() {
 }
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbwAiyfyz0HeTgalFwradj-ONapV-Cwug_rGF_qR7MV0f4SFUiTvbeBBGcELu-R23Rlcaw/exec";
+  "https://script.google.com/macros/s/AKfycbwk6ZFFQgA5z2Ct-YUKPjGj50dK9OfP-sDzoW4TEdh91OIgjXOnayiZ5sRpbqWRxiZYww/exec";
 
 // AI 按鈕統一走 GAS 後端，不在前端放 Gemini API Key。
 
