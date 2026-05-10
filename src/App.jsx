@@ -999,8 +999,8 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
     <section className="mb-8 rounded-[2rem] border border-stone-200 bg-white/95 p-4 shadow-xl shadow-stone-200/70 backdrop-blur md:p-5">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">Consultant View</div>
-          <h2 className="mt-1 text-lg font-semibold text-stone-900">固定觀察區</h2>
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">Photo Summary</div>
+          <h2 className="mt-1 text-lg font-semibold text-stone-900">照片與判斷摘要</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-600">{connectedCount}/6 已讀取</span>
@@ -1018,7 +1018,7 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
           <div className="mb-3 flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold text-stone-900">人像照片</div>
-              <div className="mt-1 text-xs text-stone-400">分析過程中固定顯示</div>
+              <div className="mt-1 text-xs text-stone-400">上傳後會固定在左側方便比對</div>
             </div>
             <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-700 hover:bg-stone-50">
               {data.photo ? "更換照片" : "上傳照片"}
@@ -1043,7 +1043,7 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
         <div>
           <div className="mb-3">
             <div className="text-sm font-semibold text-stone-900">目前判斷摘要</div>
-            <div className="mt-1 text-xs text-stone-400">操作 FS / RT / AG / LC / VM / ST 時可隨時確認</div>
+            <div className="mt-1 text-xs text-stone-400">操作各分析頁時可隨時確認目前選擇</div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
