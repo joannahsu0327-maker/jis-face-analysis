@@ -1013,7 +1013,23 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
       {saveState?.status === "success" && <div className="mb-4 rounded-2xl bg-emerald-50 px-4 py-2 text-xs leading-5 text-emerald-700">已儲存至第 {saveState.rowNumber} 列。</div>}
       {saveState?.error && <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-2 text-xs leading-5 text-rose-700">{saveState.error}</div>}
 
-      <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
+      <div className="space-y-5">
+        <div>
+          <div className="mb-3">
+            <div className="text-sm font-semibold text-stone-900">目前判斷摘要</div>
+            <div className="mt-1 text-xs text-stone-400">操作各分析頁時可隨時確認目前選擇</div>
+          </div>
+
+          <div className="grid gap-2">
+            {summaryRows.map(([label, value, targetStep]) => (
+              <button key={label} type="button" onClick={() => setCurrent(targetStep || 1)} className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3 text-left text-xs transition hover:bg-stone-100">
+                <span className="text-stone-400">{label}</span>
+                <span className="font-medium text-stone-800">{value}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <div className="mb-3 flex items-center justify-between">
             <div>
@@ -1027,33 +1043,17 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
 
           <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
 
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-[180px] w-full items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-3 text-center transition hover:border-stone-400 hover:bg-stone-100 md:h-[220px]">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-[150px] w-full items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-3 text-center transition hover:border-stone-400 hover:bg-stone-100 md:h-[170px]">
             {data.photo ? (
               <img src={data.photo} alt="個案照片" className="h-full w-full rounded-2xl object-contain" />
             ) : (
               <div>
-                <div className="text-3xl">📷</div>
+                <div className="text-2xl">📷</div>
                 <div className="mt-2 text-sm font-medium text-stone-700">先上傳正面照</div>
-                <div className="mt-1 text-xs text-stone-400">照片會固定在上方方便比對</div>
+                <div className="mt-1 text-xs text-stone-400">照片會固定在左側方便比對</div>
               </div>
             )}
           </button>
-        </div>
-
-        <div>
-          <div className="mb-3">
-            <div className="text-sm font-semibold text-stone-900">目前判斷摘要</div>
-            <div className="mt-1 text-xs text-stone-400">操作各分析頁時可隨時確認目前選擇</div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {summaryRows.map(([label, value, targetStep]) => (
-              <button key={label} type="button" onClick={() => setCurrent(targetStep)} className="flex items-center justify-between rounded-3xl bg-stone-50 px-5 py-4 text-left text-sm transition hover:bg-stone-100">
-                <span className="text-stone-400">{label}</span>
-                <span className="font-medium text-stone-800">{value}</span>
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </section>
