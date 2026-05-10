@@ -1314,7 +1314,7 @@ function RecommendPanel({ data, options, saveState, recommendState, onGenerateRe
           {recommendState?.status === "loading" ? "生成中…" : "生成整體建議"}
         </button>
       </header>
-      {!saveState?.rowNumber && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">請先在右側「目前判斷摘要」儲存個案到 01。</div>}
+      {!saveState?.rowNumber && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">請先在左側「照片與判斷摘要」儲存個案到 01。</div>}
       {recommendState?.error && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{recommendState.error}</div>}
       {recommendState?.status === "success" && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">已生成並寫入 01 客戶分析 S～W 欄。</div>}
       <div className="rounded-3xl border border-stone-200 bg-white p-5"><div className="mb-4 text-sm font-semibold text-stone-800">分析摘要</div><div className="grid gap-3 md:grid-cols-2">{summary.map((item) => <div key={item} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-700">{item}</div>)}</div></div>
