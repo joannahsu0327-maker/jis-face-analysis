@@ -917,7 +917,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
               Step {current} / {steps.length - 1} · {steps[current]?.label || "臉型 FS"}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] xl:flex-wrap xl:overflow-visible">
             {steps.filter((step) => step.id !== "basic").map((step, index) => {
               const stepIndex = index + 1;
               const active = current === stepIndex;
@@ -974,6 +974,30 @@ function ProgressRail({ current, setCurrent, data, setData }) {
         </div>
       </div>
     </header>
+  );
+}
+
+function MobileStickySummaryBar({ data, options }) {
+  return (
+    <div className="sticky top-0 z-50 mb-5 rounded-b-[1.5rem] border-b border-stone-200 bg-white/95 px-3 py-3 shadow-lg shadow-stone-200/50 backdrop-blur lg:hidden">
+      <div className="flex items-center gap-3">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-stone-100">
+          {data.photo ? (
+            <img src={data.photo} alt="個案縮圖" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-xl">📷</span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-semibold text-stone-900">{data.clientName || "未命名個案"}</div>
+          <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-stone-500">
+            <span className="rounded-full bg-stone-100 px-2 py-1">FS {data.face || "--"}</span>
+            <span className="rounded-full bg-stone-100 px-2 py-1">ST {data.style || "--"}</span>
+            <span className="rounded-full bg-stone-100 px-2 py-1">LC {data.line || "--"}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1656,6 +1680,7 @@ export default function App() {
 
           <main className="min-h-[650px] rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200/60 md:p-10">
           <div ref={contentTopRef} className="scroll-mt-32" />
+          <MobileStickySummaryBar data={data} options={options} />
           <StepNavigator current={current} jumpToStep={jumpToStep} />
 
           {current === 0 && <div className="rounded-3xl bg-stone-50 p-6 text-sm leading-6 text-stone-600">基本資料已固定在左側，請從上方選擇臉型 FS 開始分析。</div>}
