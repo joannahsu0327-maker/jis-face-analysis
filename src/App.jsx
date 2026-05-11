@@ -11,7 +11,7 @@ async function loadMediapipe() {
 }
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbwk6ZFFQgA5z2Ct-YUKPjGj50dK9OfP-sDzoW4TEdh91OIgjXOnayiZ5sRpbqWRxiZYww/exec";
+  "https://script.google.com/macros/s/AKfycbwqFWP2O4jauvy-AETmpVcP3J8CQMJCk3j-kyRW-EI1nUcIdHm1vqXiiOx5FKfR0axjdg/exec";
 
 // AI 按鈕統一走 GAS 後端，不在前端放 Gemini API Key。
 
@@ -490,6 +490,20 @@ async function requestAIProportionAnalysis(photoBase64, provider = "gemini") {
 
   const result = await response.json();
   if (!result.ok) throw new Error(result.error || "AI 初判三庭五眼失敗");
+  return result.result;
+}
+
+async function requestHairRecommendation(rowNumber) {
+  const response = await fetch(API_BASE_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "calculateHairRecommendation",
+      row: rowNumber,
+    }),
+  });
+
+  const result = await response.json();
+  if (!result.ok) throw new Error(result.error || "髮型推薦計算失敗");
   return result.result;
 }
 
@@ -1292,7 +1306,80 @@ function buildDirectionNotes(data, options) {
   return notes.length ? notes : ["請完成前方分析，系統會在這裡整理修飾方向。"];
 }
 
-function RecommendPanel({ data, options, saveState, recommendState, onGenerateRecommendation }) {
+function HairRecommendationCard({ hairRecommendState }) {
+  const recommendations = hairRecommendState?.result?.recommendations || [];
+
+  return (
+    <div className="rounded-3xl border border-stone-200 bg-white p-5">
+      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-stone-800">髮型推薦前三名</div>
+          <div className="mt-1 text-xs leading-5 text-stone-500">依 16 推薦矩陣、18 權重、17 衝突矩陣計算。</div>
+        </div>
+        {hairRecommendState?.result?.totalCandidates !== undefined && (
+          <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-500">
+            候選 {hairRecommendState.result.totalCandidates} 筆
+          </span>
+        )}
+      </div>
+
+      {hairRecommendState?.status === "idle" && (
+        <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-400">尚未生成髮型推薦。</div>
+      )}
+
+      {hairRecommendState?.status === "loading" && (
+        <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-500">髮型推薦計算中…</div>
+      )}
+
+      {hairRecommendState?.error && (
+        <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">{hairRecommendState.error}</div>
+      )}
+
+      {hairRecommendState?.status === "success" && recommendations.length === 0 && (
+        <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-700">
+          沒有命中的髮型推薦。請檢查 16 髮型推薦矩陣是否有符合目前 FS 的 Active 資料。
+        </div>
+      )}
+
+      {recommendations.length > 0 && (
+        <div className="grid gap-4">
+          {recommendations.map((item, index) => (
+            <div key={`${item.hairId}-${item.bangId}-${item.partId}-${index}`} className="rounded-[1.75rem] border border-rose-100 bg-rose-50/35 p-5">
+              <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">Top {index + 1}</div>
+                  <div className="mt-1 text-lg font-semibold text-stone-900">
+                    {item.hair}＋{item.bang}＋{item.part}
+                  </div>
+                  <div className="mt-1 text-xs text-stone-400">
+                    {item.hairId} / {item.bangId} / {item.partId} · Priority {item.priority}
+                  </div>
+                </div>
+                <div className="rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white">{item.score} 分</div>
+              </div>
+
+              {Array.isArray(item.matched) && item.matched.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {item.matched.map((tag) => (
+                    <span key={tag} className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-stone-600">命中：{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              <div className="rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-stone-700">{item.reason || item.reportText}</div>
+
+              {item.avoidNote && (
+                <div className="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-700">{item.avoidNote}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecommendPanel({ data, options, saveState, recommendState, hairRecommendState, onGenerateRecommendation, onGenerateHairRecommendation }) {
   const report = useMemo(() => buildConsultantReport(data, options, recommendState?.result), [data, options, recommendState?.result]);
   const directionNotes = useMemo(() => buildDirectionNotes(data, options), [data, options]);
   const summary = [
@@ -1310,9 +1397,14 @@ function RecommendPanel({ data, options, saveState, recommendState, onGenerateRe
           <h2 className="text-2xl font-semibold text-stone-900">建議輸出</h2>
           <p className="mt-2 text-stone-500">先儲存個案，再生成整體建議並寫回 01 客戶分析 S～W 欄。</p>
         </div>
-        <button onClick={onGenerateRecommendation} disabled={!saveState?.rowNumber || recommendState?.status === "loading"} className="rounded-full bg-stone-900 px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40">
-          {recommendState?.status === "loading" ? "生成中…" : "生成整體建議"}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={onGenerateHairRecommendation} disabled={!saveState?.rowNumber || hairRecommendState?.status === "loading"} className="rounded-full border border-stone-200 bg-white px-5 py-2 text-sm text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">
+            {hairRecommendState?.status === "loading" ? "髮型計算中…" : "生成髮型推薦"}
+          </button>
+          <button onClick={onGenerateRecommendation} disabled={!saveState?.rowNumber || recommendState?.status === "loading"} className="rounded-full bg-stone-900 px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40">
+            {recommendState?.status === "loading" ? "生成中…" : "生成整體建議"}
+          </button>
+        </div>
       </header>
       {!saveState?.rowNumber && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">請先在左側「照片與判斷摘要」儲存個案到 01。</div>}
       {recommendState?.error && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{recommendState.error}</div>}
@@ -1332,6 +1424,8 @@ function RecommendPanel({ data, options, saveState, recommendState, onGenerateRe
         <div className="mb-4 text-sm font-semibold text-stone-800">修飾方向</div>
         <div className="space-y-2">{directionNotes.map((note) => <div key={note} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">{note}</div>)}</div>
       </div>
+
+      <HairRecommendationCard hairRecommendState={hairRecommendState} />
 
       <ConsultantReportCard report={report} />
     </section>
@@ -1472,10 +1566,12 @@ export default function App() {
   const [landmarkState, setLandmarkState] = useState({ status: "idle", error: "" });
   const [saveState, setSaveState] = useState({ status: "idle", error: "", rowNumber: null, customerId: "" });
   const [recommendState, setRecommendState] = useState({ status: "idle", error: "", result: null });
+  const [hairRecommendState, setHairRecommendState] = useState({ status: "idle", error: "", result: null });
 
   const resetSave = () => {
     setSaveState({ status: "idle", error: "", rowNumber: null, customerId: "" });
     setRecommendState({ status: "idle", error: "", result: null });
+    setHairRecommendState({ status: "idle", error: "", result: null });
   };
 
   const reloadOptionGroup = async (type) => {
@@ -1583,6 +1679,7 @@ export default function App() {
   const handleSaveCustomer = async () => {
     setSaveState({ status: "loading", error: "", rowNumber: null, customerId: "" });
     setRecommendState({ status: "idle", error: "", result: null });
+    setHairRecommendState({ status: "idle", error: "", result: null });
     try {
       const measurementResult = calculateFaceMeasurements(data.measurements || {});
       const thirdsRatio = measurementResult.upperPct ? `${measurementResult.upperPct.toFixed(0)} : ${measurementResult.middlePct.toFixed(0)} : ${measurementResult.lowerPct.toFixed(0)}` : "";
@@ -1644,6 +1741,17 @@ export default function App() {
       setRecommendState({ status: "success", error: "", result: result.result });
     } catch (error) {
       setRecommendState({ status: "error", error: formatClientError(error), result: null });
+    }
+  };
+
+  const handleGenerateHairRecommendation = async () => {
+    if (!saveState.rowNumber) return;
+    setHairRecommendState({ status: "loading", error: "", result: null });
+    try {
+      const result = await requestHairRecommendation(saveState.rowNumber);
+      setHairRecommendState({ status: "success", error: "", result });
+    } catch (error) {
+      setHairRecommendState({ status: "error", error: formatClientError(error), result: null });
     }
   };
 
@@ -1895,7 +2003,7 @@ export default function App() {
               </div>
             </AnalysisPanel>
           )}
-          {current === 7 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} onGenerateRecommendation={handleGenerateRecommendation} />}
+          {current === 7 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} hairRecommendState={hairRecommendState} onGenerateRecommendation={handleGenerateRecommendation} onGenerateHairRecommendation={handleGenerateHairRecommendation} />}
 
           <div className="mt-10 border-t border-stone-100 pt-8">
             <StepNavigator current={current} jumpToStep={jumpToStep} />
