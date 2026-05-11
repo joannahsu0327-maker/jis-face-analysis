@@ -1156,7 +1156,6 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
   const updateMeasurement = (key, value) => setData((prev) => ({ ...prev, measurements: { ...(prev.measurements || {}), [key]: value } }));
   const updateField = (key, value) => setData((prev) => ({ ...prev, [key]: value }));
 
-
   return (
     <section className="space-y-6">
       <header className="flex items-start justify-between">
@@ -1208,42 +1207,61 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
         )}
       </div>
 
-      <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="mb-4">
-          <div className="text-sm font-semibold text-stone-900">點位估算／人工量測</div>
-          <div className="mt-1 text-xs text-stone-500">可先用點位偵測取得比例參考，再由顧問依照片人工修正；若手動輸入 cm 或 mm，同一位個案請統一單位。</div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {["faceLength", "faceWidth", "upperThird", "middleThird", "lowerThird"].map((key) => (
-            <Field key={key} label={{ faceLength: "臉長", faceWidth: "臉寬", upperThird: "上庭長度", middleThird: "中庭長度", lowerThird: "下庭長度" }[key]}>
-              <input type="number" style={{ fontSize: 16 }} value={data.measurements?.[key] || ""} onChange={(e) => updateMeasurement(key, e.target.value)} className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" />
-            </Field>
-          ))}
-        </div>
+      <details className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
+        <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between gap-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
+          <span>點位估算／人工量測</span>
+          <span className="text-xs font-medium text-stone-400">展開 / 收合</span>
+        </summary>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm">
-            <div className="text-stone-500">臉長寬比</div>
-            <div className="mt-1 font-semibold text-stone-900">{measurementResult.lengthWidthRatio ? measurementResult.lengthWidthRatio.toFixed(2) : "-"}</div>
-            <div className="mt-1 text-xs text-stone-500">{measurementResult.faceRatioLabel}</div>
+        <div className="mt-5">
+          <div className="mb-4">
+            <div className="text-sm font-semibold text-stone-900">點位估算／人工量測</div>
+            <div className="mt-1 text-xs text-stone-500">可先用點位偵測取得比例參考，再由顧問依照片人工修正；若手動輸入 cm 或 mm，同一位個案請統一單位。</div>
           </div>
-          <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm">
-            <div className="text-stone-500">三庭比例</div>
-            <div className="mt-1 font-semibold text-stone-900">{measurementResult.upperPct ? `${measurementResult.upperPct.toFixed(0)} : ${measurementResult.middlePct.toFixed(0)} : ${measurementResult.lowerPct.toFixed(0)}` : "-"}</div>
-            <div className="mt-1 text-xs text-stone-500">{measurementResult.thirdsLabel}</div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {["faceLength", "faceWidth", "upperThird", "middleThird", "lowerThird"].map((key) => (
+              <Field key={key} label={{ faceLength: "臉長", faceWidth: "臉寬", upperThird: "上庭長度", middleThird: "中庭長度", lowerThird: "下庭長度" }[key]}>
+                <input type="number" style={{ fontSize: 16 }} value={data.measurements?.[key] || ""} onChange={(e) => updateMeasurement(key, e.target.value)} className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" />
+              </Field>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm">
+              <div className="text-stone-500">臉長寬比</div>
+              <div className="mt-1 font-semibold text-stone-900">{measurementResult.lengthWidthRatio ? measurementResult.lengthWidthRatio.toFixed(2) : "-"}</div>
+              <div className="mt-1 text-xs text-stone-500">{measurementResult.faceRatioLabel}</div>
+            </div>
+            <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm">
+              <div className="text-stone-500">三庭比例</div>
+              <div className="mt-1 font-semibold text-stone-900">{measurementResult.upperPct ? `${measurementResult.upperPct.toFixed(0)} : ${measurementResult.middlePct.toFixed(0)} : ${measurementResult.lowerPct.toFixed(0)}` : "-"}</div>
+              <div className="mt-1 text-xs text-stone-500">{measurementResult.thirdsLabel}</div>
+            </div>
           </div>
         </div>
+      </details>
 
+      <details className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
+        <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between gap-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
+          <span>色彩整合補充</span>
+          <span className="text-xs font-medium text-stone-400">展開 / 收合</span>
+        </summary>
         <div className="mt-5">
           <SingleSelectTagGroup title="色彩整合補充" groups={colorSeasonGroups} value={data.colorSeason || ""} onChange={(next) => updateField("colorSeason", next)} />
         </div>
+      </details>
 
+      <details className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
+        <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between gap-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900 [&::-webkit-details-marker]:hidden">
+          <span>額外補充</span>
+          <span className="text-xs font-medium text-stone-400">展開 / 收合</span>
+        </summary>
         <div className="mt-5">
           <Field label="額外補充">
             <textarea style={{ fontSize: 16 }} value={data.extraObservation || ""} onChange={(e) => updateField("extraObservation", e.target.value)} className="min-h-28 w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：可保留 Fresh 感，但妝感不宜過透明。" />
           </Field>
         </div>
-      </div>
+      </details>
     </section>
   );
 }
