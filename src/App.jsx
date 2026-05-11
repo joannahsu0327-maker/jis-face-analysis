@@ -520,7 +520,7 @@ function formatClientError(error) {
 
 function Pill({ children, active, onClick }) {
   return (
-    <button type="button" onClick={onClick} className={cx("rounded-full border px-4 py-2 text-sm transition", active ? "border-stone-900 bg-stone-900 text-white shadow-sm" : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50")}>
+    <button type="button" onClick={onClick} className={cx("min-h-[44px] rounded-full border px-4 py-2.5 text-sm transition", active ? "border-stone-900 bg-stone-900 text-white shadow-sm" : "border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50")}>
       {children}
     </button>
   );
@@ -551,7 +551,7 @@ function SingleChoiceGroup({ label, value, options, onChange }) {
               type="button"
               onClick={() => onChange(active ? "" : item)}
               className={cx(
-                "rounded-full border px-4 py-2 text-sm transition",
+                "min-h-[44px] rounded-full border px-4 py-2.5 text-sm transition",
                 active
                   ? "border-rose-700 bg-rose-600 text-white shadow-sm"
                   : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100"
@@ -724,7 +724,7 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
         <div className="text-xs leading-5 text-stone-500">選擇最符合輪廓特徵的臉型；FS 代碼僅保留為系統對應，不作為主要視覺。</div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {options.map((item, index) => {
           const active = value === item.code;
           return (
@@ -784,7 +784,7 @@ function CheckboxTagGroup({ title, hint, options, value = [], onChange }) {
         {options.map((tag) => {
           const active = selected.includes(tag);
           return (
-            <button key={tag} type="button" onClick={() => toggle(tag)} className={cx("rounded-full border px-4 py-2 text-sm transition", active ? "border-rose-700 bg-rose-600 text-white shadow-sm" : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100")}>
+            <button key={tag} type="button" onClick={() => toggle(tag)} className={cx("min-h-[44px] rounded-full border px-4 py-2.5 text-sm transition", active ? "border-rose-700 bg-rose-600 text-white shadow-sm" : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100")}>
               {active ? "✓ " : ""}{tag}
             </button>
           );
@@ -823,7 +823,7 @@ function GroupedCheckboxTagGroup({ title, hint, sections, value = [], onChange }
                     type="button"
                     onClick={() => toggle(tag)}
                     className={cx(
-                      "rounded-full border px-4 py-2 text-sm transition",
+                      "min-h-[44px] rounded-full border px-4 py-2.5 text-sm transition",
                       active
                         ? "border-rose-700 bg-rose-600 text-white shadow-sm"
                         : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100"
@@ -883,7 +883,7 @@ function SingleSelectTagGroup({ title, groups, value, onChange }) {
               {items.map((item) => {
                 const active = value === item;
                 return (
-                  <button key={item} type="button" onClick={() => onChange(active ? "" : item)} className={cx("rounded-full border px-4 py-2 text-sm transition", active ? "border-rose-700 bg-rose-600 text-white shadow-sm" : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100")}>
+                  <button key={item} type="button" onClick={() => onChange(active ? "" : item)} className={cx("min-h-[44px] rounded-full border px-4 py-2.5 text-sm transition", active ? "border-rose-700 bg-rose-600 text-white shadow-sm" : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100")}>
                     {active ? "✓ " : ""}{item}
                   </button>
                 );
@@ -950,6 +950,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
             <div>
               <div className="mb-1 text-xs text-white/45">個案姓名 / 代號</div>
               <input
+                style={{ fontSize: 16 }}
                 value={data.clientName}
                 onChange={(e) => setData((prev) => ({ ...prev, clientName: e.target.value }))}
                 className="w-full min-w-0 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white outline-none placeholder:text-white/30 focus:border-rose-300 sm:text-sm"
@@ -959,6 +960,7 @@ function ProgressRail({ current, setCurrent, data, setData }) {
             <div>
               <div className="mb-1 text-xs text-white/45">主要需求</div>
               <select
+                style={{ fontSize: 16 }}
                 value={data.need}
                 onChange={(e) => setData((prev) => ({ ...prev, need: e.target.value }))}
                 className="w-full min-w-0 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-base text-white outline-none focus:border-rose-300 sm:text-sm"
@@ -977,7 +979,11 @@ function ProgressRail({ current, setCurrent, data, setData }) {
   );
 }
 
-function MobileStickySummaryBar({ data, options }) {
+function MobileStickySummaryBar({ data, options, saveState, onSaveCustomer }) {
+  const faceName = getName(options.face, data.face) || "未選臉型";
+  const styleName = getName(options.style, data.style) || "未選風格";
+  const lineName = getName(options.line, data.line) || "未選直曲";
+
   return (
     <div className="sticky top-0 z-50 mb-5 rounded-b-[1.5rem] border-b border-stone-200 bg-white/95 px-3 py-3 shadow-lg shadow-stone-200/50 backdrop-blur lg:hidden">
       <div className="flex items-center gap-3">
@@ -991,11 +997,21 @@ function MobileStickySummaryBar({ data, options }) {
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold text-stone-900">{data.clientName || "未命名個案"}</div>
           <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-stone-500">
-            <span className="rounded-full bg-stone-100 px-2 py-1">FS {data.face || "--"}</span>
-            <span className="rounded-full bg-stone-100 px-2 py-1">ST {data.style || "--"}</span>
-            <span className="rounded-full bg-stone-100 px-2 py-1">LC {data.line || "--"}</span>
+            <span className="rounded-full bg-stone-100 px-2 py-1">{faceName}</span>
+            <span className="rounded-full bg-stone-100 px-2 py-1">{styleName}</span>
+            <span className="rounded-full bg-stone-100 px-2 py-1">{lineName}</span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={onSaveCustomer}
+          disabled={saveState?.status === "loading"}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-base text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="儲存個案到 01"
+          title="儲存個案到 01"
+        >
+          {saveState?.status === "loading" ? "…" : "💾"}
+        </button>
       </div>
     </div>
   );
@@ -1200,7 +1216,7 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
         <div className="grid gap-4 md:grid-cols-2">
           {["faceLength", "faceWidth", "upperThird", "middleThird", "lowerThird"].map((key) => (
             <Field key={key} label={{ faceLength: "臉長", faceWidth: "臉寬", upperThird: "上庭長度", middleThird: "中庭長度", lowerThird: "下庭長度" }[key]}>
-              <input type="number" value={data.measurements?.[key] || ""} onChange={(e) => updateMeasurement(key, e.target.value)} className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" />
+              <input type="number" style={{ fontSize: 16 }} value={data.measurements?.[key] || ""} onChange={(e) => updateMeasurement(key, e.target.value)} className="w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" />
             </Field>
           ))}
         </div>
@@ -1224,7 +1240,7 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
 
         <div className="mt-5">
           <Field label="額外補充">
-            <textarea value={data.extraObservation || ""} onChange={(e) => updateField("extraObservation", e.target.value)} className="min-h-28 w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：可保留 Fresh 感，但妝感不宜過透明。" />
+            <textarea style={{ fontSize: 16 }} value={data.extraObservation || ""} onChange={(e) => updateField("extraObservation", e.target.value)} className="min-h-28 w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：可保留 Fresh 感，但妝感不宜過透明。" />
           </Field>
         </div>
       </div>
@@ -1680,8 +1696,10 @@ export default function App() {
 
           <main className="min-h-[650px] rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200/60 md:p-10">
           <div ref={contentTopRef} className="scroll-mt-32" />
-          <MobileStickySummaryBar data={data} options={options} />
-          <StepNavigator current={current} jumpToStep={jumpToStep} />
+          <MobileStickySummaryBar data={data} options={options} saveState={saveState} onSaveCustomer={handleSaveCustomer} />
+          <div className="hidden md:block">
+            <StepNavigator current={current} jumpToStep={jumpToStep} />
+          </div>
 
           {current === 0 && <div className="rounded-3xl bg-stone-50 p-6 text-sm leading-6 text-stone-600">基本資料已固定在左側，請從上方選擇臉型 FS 開始分析。</div>}
           {current === 1 && <AnalysisPanel title="臉型分析 FS" description="判斷臉部輪廓與骨架感。" label="選擇臉型" options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} apiState={apiStates.face} onReload={() => reloadOptionGroup("face")} selectorOverride={<FaceShapeGrid options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} loading={apiStates.face.status === "loading" && options.face.length === 0} />}><GroupedCheckboxTagGroup title={observationTagGroups.faceDetailTags.title} hint={observationTagGroups.faceDetailTags.hint} sections={faceDetailTagSections} value={data.faceDetailTags || []} onChange={(next) => handleMainChange("faceDetailTags", next)} /></AnalysisPanel>}
@@ -1832,7 +1850,7 @@ export default function App() {
                 </div>
                 {STYLE_MAP_IMAGE_URL ? (
                   <div className="overflow-hidden rounded-3xl bg-stone-50">
-                    <img src={STYLE_MAP_IMAGE_URL} alt="風格座標圖" className="w-full object-contain" />
+                    <img src={STYLE_MAP_IMAGE_URL} alt="風格座標圖" className="w-full object-contain [touch-action:pinch-zoom]" />
                   </div>
                 ) : (
                   <div className="rounded-3xl border border-dashed border-stone-200 bg-stone-50 px-5 py-8 text-center text-sm leading-6 text-stone-500">
