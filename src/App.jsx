@@ -11,7 +11,7 @@ async function loadMediapipe() {
 }
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbwqFWP2O4jauvy-AETmpVcP3J8CQMJCk3j-kyRW-EI1nUcIdHm1vqXiiOx5FKfR0axjdg/exec";
+  "https://script.google.com/macros/s/AKfycbxfWNLIlNZRHXaStkKSvhYYcamfyewDM1P2P-guqDS7aLY8YHD4V1hWhrjFvaf82OtDUQ/exec";
 
 // AI 按鈕統一走 GAS 後端，不在前端放 Gemini API Key。
 
@@ -1006,7 +1006,7 @@ function StepNavigator({ current, jumpToStep }) {
 function ApiNotice({ apiState }) {
   const isSuccess = apiState.status === "success";
   return (
-    <div className={cx("rounded-xl border px-4 py-3 text-sm font-medium", isSuccess ? "border-emerald-100 bg-emerald-50 text-emerald-700" : "border-amber-100 bg-amber-50 text-amber-700")}>
+    <div className={cx("rounded-xl border px-4 py-3 text-sm font-medium", isSuccess ? "border-emerald-100 bg-emerald-50 text-emerald-700" : "border-rose-100 bg-rose-50/60 text-rose-700")}>
       {isSuccess ? "✓ 已連接試算表資料" : "○ 尚未讀取試算表，目前使用本機備用資料"}
       {apiState.error && <div className="mt-1 break-words text-xs opacity-80">錯誤：{apiState.error}</div>}
     </div>
@@ -1055,31 +1055,6 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
 
       <div className="space-y-5">
         <div>
-          <div className="mb-3">
-            <div className="text-sm font-semibold text-stone-900">目前判斷摘要</div>
-            <div className="mt-1 text-xs text-stone-400">操作各分析頁時可隨時確認目前選擇</div>
-          </div>
-
-          <div className="grid gap-2">
-            {summaryRows.map(([label, value, targetStep]) => (
-              <button
-                key={label}
-                type="button"
-                disabled={!targetStep}
-                onClick={() => targetStep && setCurrent(targetStep)}
-                className={cx(
-                  "flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3 text-left text-xs transition",
-                  targetStep ? "hover:bg-stone-100" : "cursor-default"
-                )}
-              >
-                <span className="text-stone-400">{label}</span>
-                <span className="font-medium text-stone-800">{value}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
           <div className="mb-3 flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold text-stone-900">人像照片</div>
@@ -1103,6 +1078,31 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
               </div>
             )}
           </button>
+        </div>
+
+        <div>
+          <div className="mb-3">
+            <div className="text-sm font-semibold text-stone-900">目前判斷摘要</div>
+            <div className="mt-1 text-xs text-stone-400">操作各分析頁時可隨時確認目前選擇</div>
+          </div>
+
+          <div className="grid gap-2">
+            {summaryRows.map(([label, value, targetStep]) => (
+              <button
+                key={label}
+                type="button"
+                disabled={!targetStep}
+                onClick={() => targetStep && setCurrent(targetStep)}
+                className={cx(
+                  "flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3 text-left text-xs transition",
+                  targetStep ? "hover:bg-stone-100" : "cursor-default"
+                )}
+              >
+                <span className="text-stone-400">{label}</span>
+                <span className="font-medium text-stone-800">{value}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1331,7 +1331,7 @@ function HairRecommendationCard({ hairRecommendState }) {
       )}
 
       {hairRecommendState?.status === "success" && recommendations.length === 0 && (
-        <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-700">
+        <div className="rounded-2xl bg-rose-50/60 px-4 py-3 text-sm leading-6 text-rose-700">
           沒有命中的髮型推薦。請檢查 16 髮型推薦矩陣是否有符合目前 FS 的 Active 資料。
         </div>
       )}
@@ -1361,7 +1361,7 @@ function HairRecommendationCard({ hairRecommendState }) {
               <div className="rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-stone-700">{item.reason || item.reportText}</div>
 
               {item.avoidNote && (
-                <div className="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-700">{item.avoidNote}</div>
+                <div className="mt-3 rounded-2xl bg-rose-50/60 px-4 py-3 text-xs leading-5 text-rose-700">{item.avoidNote}</div>
               )}
             </div>
           ))}
@@ -1421,115 +1421,6 @@ function RecommendPanel({ data, options, saveState, recommendState, hairRecommen
 
       <ConsultantReportCard report={report} />
     </section>
-  );
-}
-
-function InsightPanel({ data, options, apiStates, saveState, onSaveCustomer, setData, setSaveState, setRecommendState, setCurrent }) {
-  const selected = useMemo(() => ({
-    face: getName(options.face, data.face), ratio: getName(options.ratio, data.ratio), line: getName(options.line, data.line), volume: getName(options.volume, data.volume), style: getName(options.style, data.style), age: getName(options.age, data.age),
-  }), [data, options]);
-  const records = useMemo(() => ({
-    face: getRecord(options.face, data.face), ratio: getRecord(options.ratio, data.ratio), line: getRecord(options.line, data.line), volume: getRecord(options.volume, data.volume), style: getRecord(options.style, data.style), age: getRecord(options.age, data.age),
-  }), [data, options]);
-  const direction = useMemo(() => {
-    const notes = [];
-    const push = (label, value) => {
-      if (value) notes.push(`${label}：${value}`);
-    };
-
-    push("臉型修飾", records.face?.direction);
-    push("比例修飾", records.ratio?.direction);
-    push("線條方向", records.line?.direction);
-    push("量感修飾", records.volume?.direction);
-    push("風格方向", records.style?.direction);
-    push("年齡感方向", records.age?.direction);
-
-    const hairSet = [records.face?.hairDirection, records.ratio?.hairDirection, records.line?.hairDirection, records.volume?.hairDirection, records.style?.hairDirection, records.age?.hairDirection].filter(Boolean);
-    const bangSet = [records.face?.bangDirection, records.ratio?.bangDirection, records.line?.bangDirection, records.volume?.bangDirection, records.style?.bangDirection, records.age?.bangDirection].filter(Boolean);
-    const partSet = [records.face?.partDirection, records.ratio?.partDirection, records.line?.partDirection, records.volume?.partDirection, records.style?.partDirection, records.age?.partDirection].filter(Boolean);
-    const glassesSet = [records.face?.glassesDirection, records.ratio?.glassesDirection, records.line?.glassesDirection, records.volume?.glassesDirection, records.style?.glassesDirection, records.age?.glassesDirection].filter(Boolean);
-    const earringsSet = [records.face?.earringsDirection, records.ratio?.earringsDirection, records.line?.earringsDirection, records.volume?.earringsDirection, records.style?.earringsDirection, records.age?.earringsDirection].filter(Boolean);
-    const makeupSet = [records.face?.makeupDirection, records.ratio?.makeupDirection, records.line?.makeupDirection, records.volume?.makeupDirection, records.style?.makeupDirection, records.age?.makeupDirection].filter(Boolean);
-    const avoidSet = [records.face?.avoidDirection, records.ratio?.avoidDirection, records.line?.avoidHairDirection, records.line?.avoidDirection, records.volume?.avoidDirection, records.style?.avoidDirection, records.age?.avoidDirection].filter(Boolean);
-
-    push("髮型策略", hairSet.join("｜"));
-    push("瀏海策略", bangSet.join("｜"));
-    push("分線策略", partSet.join("｜"));
-    push("眼鏡策略", glassesSet.join("｜"));
-    push("耳環策略", earringsSet.join("｜"));
-    push("妝容策略", makeupSet.join("｜"));
-    push("避免策略", avoidSet.join("｜"));
-
-    return notes.length ? notes : ["請完成左側分析，系統會整理目前修飾方向。"];
-  }, [records]);
-  const connectedCount = Object.values(apiStates).filter((state) => state.status === "success").length;
-
-  return (
-    <aside className="sticky top-8 h-fit rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center justify-between">
-        <div><div className="text-sm text-stone-500">控制中心</div><h3 className="text-lg font-semibold text-stone-900">目前判斷摘要</h3></div>
-        <span className="rounded-full bg-stone-900 px-3 py-1 text-xs text-white">{connectedCount}/6 已讀取</span>
-      </div>
-
-      <div className="mb-4 rounded-3xl border border-stone-100 bg-stone-50 p-4">
-        <div className="mb-2 text-sm font-semibold text-stone-900">儲存個案</div>
-        <p className="mb-3 text-xs leading-5 text-stone-500">人工確認所有分析與觀察資料後，先儲存到 01，再生成整體建議。</p>
-        <button type="button" disabled={saveState?.status === "loading"} onClick={onSaveCustomer} className="w-full rounded-full bg-stone-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-30">
-          {saveState?.status === "loading" ? "儲存中…" : "儲存個案到 01"}
-        </button>
-        {saveState?.status === "success" && <div className="mt-3 rounded-2xl bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-700">已儲存至第 {saveState.rowNumber} 列。</div>}
-        {saveState?.error && <div className="mt-3 rounded-2xl bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700">{saveState.error}</div>}
-      </div>
-
-      {data.photo && <div className="mb-5 rounded-3xl bg-stone-50 p-2"><img src={data.photo} alt="個案" className="max-h-96 w-full rounded-2xl object-contain" /></div>}
-
-      <div className="space-y-3">
-        {[
-          ["臉型", selected.face, 1],
-          ["比例", selected.ratio, 2],
-          ["年齡感", selected.age, 3],
-          ["直曲", selected.line, 4],
-          ["量感", selected.volume, 5],
-          ["風格", selected.style, 6],
-          ["色彩季型補充", data.colorSeason || "未選擇", 0],
-        ].map(([label, value, targetStep]) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => setCurrent(targetStep)}
-            className="flex w-full items-center justify-between rounded-2xl bg-stone-50 px-4 py-3 text-left text-sm transition hover:bg-stone-100"
-          >
-            <span className="text-stone-500">{label}</span>
-            <span className="font-medium text-stone-900">{value}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-5 rounded-3xl border border-stone-100 bg-white p-4">
-        <div className="mb-3 text-sm font-semibold text-stone-800">修飾目標標籤</div>
-        <div className="flex flex-wrap gap-2">
-          {observationTagGroups.correctionGoalTags.options.map((tag) => {
-            const selectedTags = data.correctionGoalTags || [];
-            const active = selectedTags.includes(tag);
-            return (
-              <button key={tag} type="button" onClick={() => {
-                const next = active ? selectedTags.filter((item) => item !== tag) : [...selectedTags, tag];
-                setData({ ...data, correctionGoalTags: next });
-                setSaveState({ status: "idle", error: "", rowNumber: null, customerId: "" });
-                setRecommendState({ status: "idle", error: "", result: null });
-              }} className={cx("rounded-full border px-3 py-2 text-xs transition", active ? "border-rose-700 bg-rose-600 text-white shadow-sm" : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100")}>
-                {active ? "✓ " : ""}{tag}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-3xl bg-white p-4">
-        <div className="mb-2 text-sm font-semibold text-stone-800">修飾方向</div>
-        <div className="space-y-2">{direction.map((note) => <div key={note} className="rounded-2xl bg-stone-50 px-3 py-2 text-sm leading-6 text-stone-700">{note}</div>)}</div>
-      </div>
-    </aside>
   );
 }
 
