@@ -1314,13 +1314,8 @@ function HairRecommendationCard({ hairRecommendState }) {
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="text-sm font-semibold text-stone-800">髮型推薦前三名</div>
-          <div className="mt-1 text-xs leading-5 text-stone-500">依 16 推薦矩陣、18 權重、17 衝突矩陣計算。</div>
+          <div className="mt-1 text-xs leading-5 text-stone-500">依目前顏分析結果，整理最適合的髮型方向。</div>
         </div>
-        {hairRecommendState?.result?.totalCandidates !== undefined && (
-          <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-500">
-            候選 {hairRecommendState.result.totalCandidates} 筆
-          </span>
-        )}
       </div>
 
       {hairRecommendState?.status === "idle" && (
@@ -1351,11 +1346,8 @@ function HairRecommendationCard({ hairRecommendState }) {
                   <div className="mt-1 text-lg font-semibold text-stone-900">
                     {item.hair}＋{item.bang}＋{item.part}
                   </div>
-                  <div className="mt-1 text-xs text-stone-400">
-                    {item.hairId} / {item.bangId} / {item.partId} · Priority {item.priority}
-                  </div>
                 </div>
-                <div className="rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white">{item.score} 分</div>
+                <div className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-stone-500">推薦分數 {item.score}</div>
               </div>
 
               {Array.isArray(item.matched) && item.matched.length > 0 && (
