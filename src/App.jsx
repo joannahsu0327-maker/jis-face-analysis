@@ -1364,6 +1364,14 @@ function buildDirectionNotes(data, options) {
   return notes.length ? notes : ["請完成前方分析，系統會在這裡整理修飾方向。"];
 }
 
+function getHairImageUrl(item) {
+  if (!item?.hairId || !item?.bangId || !item?.partId) return "";
+  const hairId = String(item.hairId).trim().toLowerCase();
+  const bangId = String(item.bangId).trim().toLowerCase();
+  const partId = String(item.partId).trim().toLowerCase();
+  return `/hair-library/${hairId}-${bangId}-${partId}.jpg`;
+}
+
 function HairRecommendationCard({ hairRecommendState }) {
   const recommendations = hairRecommendState?.result?.recommendations || [];
 
@@ -1398,6 +1406,20 @@ function HairRecommendationCard({ hairRecommendState }) {
         <div className="grid gap-4">
           {recommendations.map((item, index) => (
             <div key={`${item.hairId}-${item.bangId}-${item.partId}-${index}`} className="rounded-[1.75rem] border border-rose-100 bg-rose-50/35 p-5">
+              {getHairImageUrl(item) && (
+                <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-white bg-white shadow-sm">
+                  <img
+                    src={getHairImageUrl(item)}
+                    alt={`${item.hair}＋${item.bang}＋${item.part}`}
+                    className="aspect-[4/5] w-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.closest("div").style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+
               <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">Top {index + 1}</div>
