@@ -767,6 +767,13 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
         })}
       </div>
 
+        <div className="mb-5 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">
+        目前顯示：
+        <span className="font-semibold text-stone-800">{currentGroup.label}</span>
+        （{activeGroup === "all" ? options.length : visibleOptions.length} 種）
+        ｜共 {options.length} 種臉型。請先選上方分類，再選下方 FS 臉型卡。
+      </div>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {visibleOptions.map((item, index) => {
           const active = value === item.code;
@@ -966,6 +973,23 @@ function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer
 
       {open && (
         <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
+            <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-stone-50">
+      <div className="aspect-[3/4] w-full">
+        {data.photo ? (
+          <img
+            src={data.photo}
+            alt="展開照片預覽"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center text-stone-400">
+            <div className="text-3xl">📷</div>
+            <div className="mt-2 text-sm font-medium">尚未上傳照片</div>
+            <div className="mt-1 text-xs">上傳後可在手機版放大比對</div>
+          </div>
+        )}
+      </div>
+    </div>
           <div className="grid gap-2">
             {summaryRows.map((row) => (
               <button
