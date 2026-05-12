@@ -1107,8 +1107,6 @@ function SetupPanel({ data, setData }) {
           </button>
         </div>
       </div>
-
-      <div className="rounded-3xl border border-rose-100 bg-rose-50/50 p-5 text-sm leading-6 text-stone-700">流程提醒：建立個案與上傳照片 → AI 初判與量測 → FS / RT / AG / LC / VM / ST 人工修正 → 儲存個案 → 生成建議。</div>
     </section>
   );
 }
