@@ -732,7 +732,8 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
     { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
     { key: "ovalLong", label: "橢圓長型系", hint: "FS03–FS06", codes: ["FS03", "FS04", "FS05", "FS06"] },
     { key: "square", label: "方型系", hint: "FS07–FS08 / FS14", codes: ["FS07", "FS08", "FS14"] },
-    { key: "special", label: "菱形臉 / 三角形臉", hint: "FS09–FS13", codes: ["FS09", "FS10", "FS11", "FS12", "FS13"] },
+    { key: "diamond", label: "菱形臉", hint: "FS09–FS10", codes: ["FS09", "FS10"] },
+    { key: "triangle", label: "三角形臉", hint: "FS11–FS13", codes: ["FS11", "FS12", "FS13"] },
   ];
   const currentGroup = faceGroups.find((group) => group.key === activeGroup) || faceGroups[0];
   const visibleOptions = activeGroup === "all" ? options : options.filter((item) => currentGroup.codes.includes(item.code));
@@ -908,29 +909,91 @@ function AIConfirmationCard({ data, options, aiState, setCurrent }) {
   );
 }
 
-function MobileStickySummaryBar({ data, options, saveState, onSaveCustomer, aiState }) {
+function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer, aiState, setCurrent }) {
+  const [open, setOpen] = useState(false);
+
+  const summaryRows = [
+    { key: "face", label: "臉型", value: getName(options.face, data.face), code: data.face, targetStep: 2 },
+    { key: "ratio", label: "比例", value: getName(options.ratio, data.ratio), code: data.ratio, targetStep: 3 },
+    { key: "age", label: "年齡感", value: getName(options.age, data.age), code: data.age, targetStep: 4 },
+    { key: "line", label: "直曲", value: getName(options.line, data.line), code: data.line, targetStep: 5 },
+    { key: "volume", label: "量感", value: getName(options.volume, data.volume), code: data.volume, targetStep: 6 },
+    { key: "style", label: "風格", value: getName(options.style, data.style), code: data.style, targetStep: 7 },
+    { key: "colorSeason", label: "色彩季型", value: data.colorSeason || "未選擇", code: "", targetStep: 7 },
+  ];
+
   const faceName = getName(options.face, data.face) || "未選臉型";
   const styleName = getName(options.style, data.style) || "未選風格";
-  const lineName = getName(options.line, data.line) || "未選直曲";
 
   return (
-    <div className="sticky top-0 z-50 mb-5 rounded-b-[1.5rem] border-b border-stone-200 bg-white/95 px-3 py-3 shadow-lg shadow-stone-200/50 backdrop-blur lg:hidden">
-      <div className="flex items-center gap-3">
+    <div className="mb-5 rounded-[1.5rem] border border-stone-200 bg-white p-3 shadow-sm lg:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center gap-3 text-left"
+      >
         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-stone-100">
-          {data.photo ? <img src={data.photo} alt="個案縮圖" className="h-full w-full object-cover" /> : <span className="text-xl">📷</span>}
+          {data.photo ? (
+            <img src={data.photo} alt="個案縮圖" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-xl">📷</span>
+          )}
         </div>
+
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-stone-900">{data.clientName || "未命名個案"}</div>
+          <div className="truncate text-sm font-semibold text-stone-900">
+            {data.clientName || "未命名個案"}
+          </div>
+
           <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-stone-500">
-            <SummaryValueBadge value={faceName} code={data.face} aiMatched={isAIMatched(aiState, "face", data.face)} />
-            <SummaryValueBadge value={styleName} code={data.style} aiMatched={isAIMatched(aiState, "style", data.style)} />
-            <SummaryValueBadge value={lineName} code={data.line} aiMatched={isAIMatched(aiState, "line", data.line)} />
+            <SummaryValueBadge
+              value={faceName}
+              code={data.face}
+              aiMatched={isAIMatched(aiState, "face", data.face)}
+            />
+            <SummaryValueBadge
+              value={styleName}
+              code={data.style}
+              aiMatched={isAIMatched(aiState, "style", data.style)}
+            />
           </div>
         </div>
-        <button type="button" onClick={onSaveCustomer} disabled={saveState?.status === "loading"} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-base text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40" aria-label="儲存個案到 01" title="儲存個案到 01">
-          {saveState?.status === "loading" ? "…" : "💾"}
-        </button>
-      </div>
+
+        <div className="shrink-0 text-sm text-stone-400">
+          {open ? "收合" : "展開"}
+        </div>
+      </button>
+
+      {open && (
+        <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
+          <div className="grid gap-2">
+            {summaryRows.map((row) => (
+              <button
+                key={row.key}
+                type="button"
+                onClick={() => setCurrent(row.targetStep)}
+                className="flex items-center justify-between gap-3 rounded-2xl bg-stone-50 px-4 py-3 text-left text-xs transition hover:bg-rose-50"
+              >
+                <span className="shrink-0 text-stone-400">{row.label}</span>
+                <SummaryValueBadge
+                  value={row.value}
+                  code={row.code}
+                  aiMatched={isAIMatched(aiState, row.key, row.code)}
+                />
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onSaveCustomer}
+            disabled={saveState?.status === "loading"}
+            className="mt-2 w-full rounded-full bg-stone-900 px-4 py-3 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {saveState?.status === "loading" ? "儲存中…" : "儲存個案到 01"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1608,7 +1671,14 @@ export default function App() {
 
           <main className="min-w-0 overflow-hidden rounded-[2rem] border border-stone-100 bg-white p-4 shadow-2xl shadow-stone-200/60 sm:p-6 md:p-8 xl:p-10">
             <div ref={contentTopRef} className="scroll-mt-32" />
-            <MobileStickySummaryBar data={data} options={options} saveState={saveState} onSaveCustomer={handleSaveCustomer} aiState={aiState} />
+            <MobileCollapsibleSummaryCard
+  data={data}
+  options={options}
+  saveState={saveState}
+  onSaveCustomer={handleSaveCustomer}
+  aiState={aiState}
+  setCurrent={jumpToStep}
+/>
             <div className="hidden md:block"><StepNavigator current={current} jumpToStep={jumpToStep} /></div>
 
             {current === 0 && <SetupPanel data={data} setData={setData} />}
