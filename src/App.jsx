@@ -732,7 +732,7 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
     { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
     { key: "ovalLong", label: "橢圓長型系", hint: "FS03–FS06", codes: ["FS03", "FS04", "FS05", "FS06"] },
     { key: "square", label: "方型系", hint: "FS07–FS08 / FS14", codes: ["FS07", "FS08", "FS14"] },
-    { key: "special", label: "特殊型", hint: "FS09–FS13", codes: ["FS09", "FS10", "FS11", "FS12", "FS13"] },
+    { key: "special", label: "菱形臉 / 三角形臉", hint: "FS09–FS13", codes: ["FS09", "FS10", "FS11", "FS12", "FS13"] },
   ];
   const currentGroup = faceGroups.find((group) => group.key === activeGroup) || faceGroups[0];
   const visibleOptions = activeGroup === "all" ? options : options.filter((item) => currentGroup.codes.includes(item.code));
