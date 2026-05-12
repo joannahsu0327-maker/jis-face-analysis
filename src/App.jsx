@@ -726,7 +726,7 @@ function BinaryAssessmentTable({ title, hint, items, leftTitle, rightTitle, left
 }
 
 function FaceShapeGrid({ options, value, onChange, loading }) {
-  const [activeGroup, setActiveGroup] = useState("all");
+  const [activeGroup, setActiveGroup] = useState("round");
   const faceGroups = [
     { key: "all", label: "全部", hint: "FS01–FS14", codes: [] },
     { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
