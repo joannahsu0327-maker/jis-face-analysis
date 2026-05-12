@@ -1665,7 +1665,7 @@ export default function App() {
         <MobileBottomNavigator current={current} jumpToStep={jumpToStep} />
 
         <div className="grid min-w-0 gap-8 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto">
+          <aside className="hidden min-w-0 space-y-6 lg:sticky lg:top-6 lg:block lg:h-[calc(100vh-3rem)] lg:overflow-y-auto">
             <StickyPhotoSummaryPanel data={data} setData={setData} options={options} apiStates={apiStates} saveState={saveState} onSaveCustomer={handleSaveCustomer} setCurrent={jumpToStep} aiState={aiState} />
           </aside>
 
