@@ -746,7 +746,7 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
         <div className="text-xs leading-5 text-stone-500">先選臉型大方向，再從該組精準選擇 FS 類型，降低手機版瀏覽負擔。</div>
       </div>
 
-      <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mb-5 flex flex-wrap gap-2 overflow-x-auto pb-1 md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {faceGroups.map((group) => {
           const active = activeGroup === group.key;
           return (
@@ -755,7 +755,7 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
               type="button"
               onClick={() => setActiveGroup(group.key)}
               className={cx(
-                "min-h-[44px] shrink-0 rounded-full border px-4 py-2 text-left text-sm transition",
+                "min-h-[44px] shrink-0 rounded-full border px-4 py-2 text-left text-sm transition md:shrink",
                 active ? "border-stone-900 bg-stone-900 text-white shadow-sm" : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100"
               )}
             >
@@ -1601,12 +1601,12 @@ export default function App() {
         <ProgressRail current={current} setCurrent={jumpToStep} />
         <MobileBottomNavigator current={current} jumpToStep={jumpToStep} />
 
-        <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-          <aside className="space-y-6 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
+          <aside className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto">
             <StickyPhotoSummaryPanel data={data} setData={setData} options={options} apiStates={apiStates} saveState={saveState} onSaveCustomer={handleSaveCustomer} setCurrent={jumpToStep} aiState={aiState} />
           </aside>
 
-          <main className="min-h-[650px] rounded-[2.5rem] border border-stone-100 bg-white p-6 shadow-2xl shadow-stone-200/60 md:p-10">
+          <main className="min-w-0 overflow-hidden rounded-[2rem] border border-stone-100 bg-white p-4 shadow-2xl shadow-stone-200/60 sm:p-6 md:p-8 xl:p-10">
             <div ref={contentTopRef} className="scroll-mt-32" />
             <MobileStickySummaryBar data={data} options={options} saveState={saveState} onSaveCustomer={handleSaveCustomer} aiState={aiState} />
             <div className="hidden md:block"><StepNavigator current={current} jumpToStep={jumpToStep} /></div>
