@@ -27,12 +27,12 @@ const SHEETS = {
 const steps = [
   { id: "setup", label: "建立個案", shortLabel: "個案", icon: "👤" },
   { id: "ai", label: "AI 初判與量測", shortLabel: "量測", icon: "📏" },
-  { id: "face", label: "臉型 FS", shortLabel: "FS", icon: "🔷" },
-  { id: "ratio", label: "比例 RT", shortLabel: "RT", icon: "📐" },
-  { id: "age", label: "年齡 AG", shortLabel: "AG", icon: "🌱" },
-  { id: "line", label: "直曲 LC", shortLabel: "LC", icon: "〰️" },
-  { id: "volume", label: "量感 VM", shortLabel: "VM", icon: "◐" },
-  { id: "style", label: "風格 ST", shortLabel: "ST", icon: "✦" },
+  { id: "face", label: "臉型 FS", shortLabel: "臉型", icon: "🔷" },
+  { id: "ratio", label: "比例 RT", shortLabel: "比例", icon: "📐" },
+  { id: "age", label: "年齡 AG", shortLabel: "年齡", icon: "🌱" },
+  { id: "line", label: "直曲 LC", shortLabel: "直曲", icon: "〰️" },
+  { id: "volume", label: "量感 VM", shortLabel: "量感", icon: "◐" },
+  { id: "style", label: "風格 ST", shortLabel: "風格", icon: "✦" },
   { id: "recommend", label: "建議輸出", shortLabel: "輸出", icon: "📄" },
 ];
 
@@ -870,6 +870,44 @@ function SummaryValueBadge({ label, value, code, aiMatched }) {
   );
 }
 
+function AIConfirmationCard({ data, options, aiState, setCurrent }) {
+  if (aiState?.status !== "success") return null;
+
+  const rows = [
+    { key: "face", label: "臉型", value: getName(options.face, data.face), code: data.face, targetStep: 2 },
+    { key: "ratio", label: "比例", value: getName(options.ratio, data.ratio), code: data.ratio, targetStep: 3 },
+    { key: "age", label: "年齡感", value: getName(options.age, data.age), code: data.age, targetStep: 4 },
+    { key: "line", label: "直曲", value: getName(options.line, data.line), code: data.line, targetStep: 5 },
+    { key: "volume", label: "量感", value: getName(options.volume, data.volume), code: data.volume, targetStep: 6 },
+    { key: "style", label: "風格", value: getName(options.style, data.style), code: data.style, targetStep: 7 },
+  ];
+
+  return (
+    <div className="mt-4 rounded-[1.75rem] border border-rose-100 bg-rose-50/50 p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-stone-900">AI 判讀集中確認</div>
+          <div className="mt-1 text-xs leading-5 text-stone-500">AI 已帶入下列欄位。可直接點選任一項，跳到該步驟人工修正。</div>
+        </div>
+        <span className="shrink-0 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-bold text-white">AI</span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {rows.map((row) => (
+          <button
+            key={row.key}
+            type="button"
+            onClick={() => setCurrent(row.targetStep)}
+            className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left text-xs transition hover:bg-rose-50"
+          >
+            <span className="shrink-0 text-stone-400">{row.label}</span>
+            <SummaryValueBadge value={row.value} code={row.code} aiMatched={isAIMatched(aiState, row.key, row.code)} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MobileStickySummaryBar({ data, options, saveState, onSaveCustomer, aiState }) {
   const faceName = getName(options.face, data.face) || "未選臉型";
   const styleName = getName(options.style, data.style) || "未選風格";
@@ -891,6 +929,34 @@ function MobileStickySummaryBar({ data, options, saveState, onSaveCustomer, aiSt
         </div>
         <button type="button" onClick={onSaveCustomer} disabled={saveState?.status === "loading"} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-base text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40" aria-label="儲存個案到 01" title="儲存個案到 01">
           {saveState?.status === "loading" ? "…" : "💾"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MobileBottomNavigator({ current, jumpToStep }) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 px-4 py-3 shadow-[0_-12px_30px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
+      <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => jumpToStep(Math.max(0, current - 1))}
+          disabled={current <= 0}
+          className="min-h-[44px] rounded-full border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          ← 上一步
+        </button>
+        <div className="shrink-0 rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">
+          {current} / {steps.length - 1}
+        </div>
+        <button
+          type="button"
+          onClick={() => jumpToStep(Math.min(steps.length - 1, current + 1))}
+          disabled={current === steps.length - 1}
+          className="min-h-[44px] rounded-full bg-stone-900 px-5 py-2 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          下一步 →
         </button>
       </div>
     </div>
@@ -1087,7 +1153,7 @@ function SingleChoiceGroup({ label, value, options = [], onChange }) {
   );
 }
 
-function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates, landmarkState, onLandmarkMeasure }) {
+function BasicPanel({ data, setData, options, aiState, onAIAnalyze, onSyncAll, apiStates, landmarkState, onLandmarkMeasure, setCurrent }) {
   const measurementResult = useMemo(() => calculateFaceMeasurements(data.measurements || {}), [data.measurements]);
   const isSyncing = Object.values(apiStates).some((s) => s.status === "loading");
   const updateMeasurement = (key, value) => setData((prev) => ({ ...prev, measurements: { ...(prev.measurements || {}), [key]: value } }));
@@ -1119,7 +1185,7 @@ function BasicPanel({ data, setData, aiState, onAIAnalyze, onSyncAll, apiStates,
         {aiState.error && <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">{aiState.error}</div>}
         {landmarkState.error && <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{landmarkState.error}</div>}
         {landmarkState.status === "success" && <div className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">已完成點位偵測：系統已依臉部關鍵點估算臉長、臉寬與三庭比例。此數值為輔助參考，請依照片狀態與顧問判斷微調後再儲存。</div>}
-        {aiState.result && <div className="mt-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">AI 初判：{aiState.result.faceShape || "未判斷"}｜{aiState.result.ratio || "未判斷"}｜{aiState.result.line || "未判斷"}｜{aiState.result.volume || "未判斷"}｜{aiState.result.style || "未判斷"}｜{aiState.result.age || "未判斷"}</div>}
+        <AIConfirmationCard data={data} options={options} aiState={aiState} setCurrent={setCurrent} />
       </div>
 
       <details className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm" open>
@@ -1532,9 +1598,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-stone-50 p-4 font-sans text-stone-900 md:p-8 selection:bg-rose-500 selection:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-stone-50 p-4 pb-28 font-sans text-stone-900 md:p-8 selection:bg-rose-500 selection:text-white">
       <div className="mx-auto max-w-7xl">
         <ProgressRail current={current} setCurrent={jumpToStep} />
+        <MobileBottomNavigator current={current} jumpToStep={jumpToStep} />
 
         <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
           <aside className="space-y-6 lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:overflow-y-auto">
@@ -1547,7 +1614,7 @@ export default function App() {
             <div className="hidden md:block"><StepNavigator current={current} jumpToStep={jumpToStep} /></div>
 
             {current === 0 && <SetupPanel data={data} setData={setData} />}
-            {current === 1 && <BasicPanel data={data} setData={setData} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} />}
+            {current === 1 && <BasicPanel data={data} setData={setData} options={options} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} setCurrent={jumpToStep} />}
             {current === 2 && (
               <AnalysisPanel title="臉型分析 FS" description="判斷臉部輪廓與骨架感。" label="選擇臉型" options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} apiState={apiStates.face} onReload={() => reloadOptionGroup("face")} selectorOverride={<FaceShapeGrid options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} loading={apiStates.face.status === "loading" && options.face.length === 0} />}>
                 <GroupedCheckboxTagGroup title={observationTagGroups.faceDetailTags.title} hint={observationTagGroups.faceDetailTags.hint} sections={faceDetailTagSections} value={data.faceDetailTags || []} onChange={(next) => handleMainChange("faceDetailTags", next)} />
@@ -1599,7 +1666,7 @@ export default function App() {
             )}
             {current === 8 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} hairRecommendState={hairRecommendState} onGenerateRecommendation={handleGenerateRecommendation} onGenerateHairRecommendation={handleGenerateHairRecommendation} />}
 
-            <div className="mt-10 border-t border-stone-100 pt-8"><StepNavigator current={current} jumpToStep={jumpToStep} /></div>
+            <div className="mt-10 hidden border-t border-stone-100 pt-8 md:block"><StepNavigator current={current} jumpToStep={jumpToStep} /></div>
           </main>
         </div>
       </div>
