@@ -1165,9 +1165,9 @@ function MobileBottomNavigator({ current, jumpToStep }) {
         >
           ← 上一步
         </button>
-        <div className="shrink-0 rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">
-          {current} / {steps.length}
-        </div>
+      <div className="shrink-0 rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">
+  {current + 1} / {steps.length}
+</div>
         <button
           type="button"
           onClick={() => jumpToStep(Math.min(steps.length - 1, current + 1))}
