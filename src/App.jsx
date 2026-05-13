@@ -1599,6 +1599,7 @@ function RecommendPanel({ data, options, saveState, recommendState, hairRecommen
 export default function App() {
   const [current, setCurrent] = useState(0);
   const contentTopRef = useRef(null);
+  const stepContentRef = useRef(null);
   const [options, setOptions] = useState(fallbackOptions);
   const [apiStates, setApiStates] = useState({ face: { status: "idle", error: "" }, ratio: { status: "idle", error: "" }, line: { status: "idle", error: "" }, volume: { status: "idle", error: "" }, style: { status: "idle", error: "" }, age: { status: "idle", error: "" } });
   const [data, setData] = useState({
@@ -1622,10 +1623,15 @@ export default function App() {
     setHairRecommendState({ status: "idle", error: "", result: null });
   };
 
-  const jumpToStep = (step) => {
-    setCurrent(step);
-    setTimeout(() => contentTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
-  };
+const jumpToStep = (step) => {
+  setCurrent(step);
+  setTimeout(() => {
+    stepContentRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 0);
+};
 
   const reloadOptionGroup = async (type) => {
     const config = sheetConfig[type];
@@ -1812,7 +1818,7 @@ export default function App() {
 
           <main className="min-w-0 overflow-hidden rounded-[2rem] border border-stone-100 bg-white p-4 shadow-2xl shadow-stone-200/60 sm:p-6 md:p-8 xl:p-10">
             <div ref={contentTopRef} className="scroll-mt-32" />
-            <MobileCollapsibleSummaryCard
+ <MobileCollapsibleSummaryCard
   data={data}
   options={options}
   saveState={saveState}
@@ -1820,9 +1826,14 @@ export default function App() {
   aiState={aiState}
   setCurrent={jumpToStep}
 />
-            <div className="hidden md:block"><StepNavigator current={current} jumpToStep={jumpToStep} /></div>
 
-            {current === 0 && <SetupPanel data={data} setData={setData} />}
+<div ref={stepContentRef} className="scroll-mt-24" />
+
+<div className="hidden md:block">
+  <StepNavigator current={current} jumpToStep={jumpToStep} />
+</div>
+
+{current === 0 && <SetupPanel data={data} setData={setData} />}
             {current === 1 && <BasicPanel data={data} setData={setData} options={options} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} setCurrent={jumpToStep} />}
             {current === 2 && (
               <AnalysisPanel title="臉型分析 FS" description="判斷臉部輪廓與骨架感。" label="選擇臉型" options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} apiState={apiStates.face} onReload={() => reloadOptionGroup("face")} selectorOverride={<FaceShapeGrid options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} loading={apiStates.face.status === "loading" && options.face.length === 0} />}>
