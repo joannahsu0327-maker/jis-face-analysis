@@ -881,7 +881,7 @@ function ApiNotice({ apiState }) {
   );
 }
 
-function ProgressRail({ current, setCurrent, data }) {
+function ProgressRail({ current, setCurrent, data, recommendState }) {
   const isStepCompleted = (stepId) => {
     switch (stepId) {
       case "setup":
@@ -915,7 +915,7 @@ function ProgressRail({ current, setCurrent, data }) {
         return Boolean(data?.style);
 
       case "recommend":
-        return Boolean(data?.recommendation || data?.finalReport);
+        return Boolean(recommendState?.result);
 
       default:
         return false;
@@ -942,7 +942,9 @@ function ProgressRail({ current, setCurrent, data }) {
 
         <div className="min-w-0">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="text-xs font-medium text-stone-500">顧問流程</div>
+            <div className="text-xs font-medium text-stone-500">
+              顧問流程
+            </div>
 
             <div className="shrink-0 rounded-full bg-stone-800 px-4 py-2 text-xs font-medium text-stone-400">
               Step {current + 1} / {steps.length} · {steps[current]?.label}
@@ -964,7 +966,7 @@ function ProgressRail({ current, setCurrent, data }) {
                     active
                       ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30 ring-2 ring-white/80"
                       : completed
-                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
+                        ? "bg-white/15 text-white shadow-sm ring-1 ring-white/20 hover:bg-white/20"
                         : "bg-stone-800/70 text-stone-400 hover:bg-stone-700 hover:text-white"
                   )}
                 >
