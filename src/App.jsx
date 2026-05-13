@@ -726,7 +726,6 @@ function BinaryAssessmentTable({ title, hint, items, leftTitle, rightTitle, left
 }
 
 function FaceShapeGrid({ options, value, onChange, loading }) {
-  const [activeGroup, setActiveGroup] = useState("round");
   const faceGroups = [
     { key: "all", label: "全部", hint: "FS01–FS14", codes: [] },
     { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
@@ -735,21 +734,64 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
     { key: "diamond", label: "菱形臉", hint: "FS09–FS10", codes: ["FS09", "FS10"] },
     { key: "triangle", label: "三角形臉", hint: "FS11–FS13", codes: ["FS11", "FS12", "FS13"] },
   ];
-  const currentGroup = faceGroups.find((group) => group.key === activeGroup) || faceGroups[0];
-  const visibleOptions = activeGroup === "all" ? options : options.filter((item) => currentGroup.codes.includes(item.code));
 
-  if (loading) return <div className="rounded-3xl border border-stone-200 bg-stone-50 p-5 text-sm text-stone-500">正在讀取臉型資料…</div>;
+  const getInitialGroup = (code) => {
+    if (!code) return "round";
+
+    const matchedGroup = faceGroups.find(
+      (group) => group.key !== "all" && group.codes.includes(code)
+    );
+
+    return matchedGroup ? matchedGroup.key : "all";
+  };
+
+  const [activeGroup, setActiveGroup] = useState(() => getInitialGroup(value));
+
+  useEffect(() => {
+    if (!value) return;
+
+    setActiveGroup((currentGroup) => {
+      const currentGroupData = faceGroups.find((group) => group.key === currentGroup);
+
+      if (
+        currentGroup === "all" ||
+        currentGroupData?.codes.includes(value)
+      ) {
+        return currentGroup;
+      }
+
+      return getInitialGroup(value);
+    });
+  }, [value]);
+
+  const currentGroup = faceGroups.find((group) => group.key === activeGroup) || faceGroups[0];
+
+  const visibleOptions =
+    activeGroup === "all"
+      ? options
+      : options.filter((item) => currentGroup.codes.includes(item.code));
+
+  if (loading) {
+    return (
+      <div className="rounded-3xl border border-stone-200 bg-stone-50 p-5 text-sm text-stone-500">
+        正在讀取臉型資料…
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-[2rem] border border-rose-100 bg-white p-4 shadow-sm sm:p-5">
       <div className="mb-5 flex flex-col gap-1">
         <div className="text-sm font-semibold text-stone-900">臉型圖卡選擇</div>
-        <div className="text-xs leading-5 text-stone-500">先選臉型大方向，再從該組精準選擇 FS 類型，降低手機版瀏覽負擔。</div>
+        <div className="text-xs leading-5 text-stone-500">
+          先選臉型大方向，再從該組精準選擇 FS 類型，降低手機版瀏覽負擔。
+        </div>
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2 overflow-x-auto pb-1 md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {faceGroups.map((group) => {
           const active = activeGroup === group.key;
+
           return (
             <button
               key={group.key}
@@ -757,17 +799,21 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
               onClick={() => setActiveGroup(group.key)}
               className={cx(
                 "min-h-[44px] shrink-0 rounded-full border px-4 py-2 text-left text-sm transition md:shrink",
-                active ? "border-stone-900 bg-stone-900 text-white shadow-sm" : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100"
+                active
+                  ? "border-stone-900 bg-stone-900 text-white shadow-sm"
+                  : "border-rose-200 bg-rose-50 text-stone-700 hover:border-rose-400 hover:bg-rose-100"
               )}
             >
               <span className="font-semibold">{group.label}</span>
-              <span className={cx("ml-2 text-xs", active ? "text-white/70" : "text-stone-400")}>{group.hint}</span>
+              <span className={cx("ml-2 text-xs", active ? "text-white/70" : "text-stone-400")}>
+                {group.hint}
+              </span>
             </button>
           );
         })}
       </div>
 
-        <div className="mb-5 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">
+      <div className="mb-5 rounded-2xl bg-stone-50 px-4 py-3 text-xs leading-5 text-stone-500">
         目前顯示：
         <span className="font-semibold text-stone-800">{currentGroup.label}</span>
         （{activeGroup === "all" ? options.length : visibleOptions.length} 種）
@@ -777,6 +823,7 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {visibleOptions.map((item, index) => {
           const active = value === item.code;
+
           return (
             <button
               key={item.code}
@@ -784,19 +831,38 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
               onClick={() => onChange(item.code)}
               className={cx(
                 "relative overflow-hidden rounded-[1.5rem] border bg-white px-4 pb-4 pt-3 text-center transition-all duration-200",
-                active ? "border-rose-500 bg-rose-50 shadow-xl shadow-rose-100 ring-2 ring-rose-300" : "border-rose-100 hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-lg hover:shadow-stone-100"
+                active
+                  ? "border-rose-500 bg-rose-50 shadow-xl shadow-rose-100 ring-2 ring-rose-300"
+                  : "border-rose-100 hover:-translate-y-0.5 hover:border-rose-300 hover:shadow-lg hover:shadow-stone-100"
               )}
             >
               <div className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-sm font-semibold text-rose-600">
                 {activeGroup === "all" ? index + 1 : item.code.replace("FS", "")}
               </div>
-              {active && <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-rose-600 text-sm font-semibold text-white shadow-md">✓</div>}
+
+              {active && (
+                <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-rose-600 text-sm font-semibold text-white shadow-md">
+                  ✓
+                </div>
+              )}
+
               <div className="pointer-events-none mt-4 flex justify-center">
-                <div className="w-full max-w-[150px]"><FaceShapeIcon code={item.code} active={false} /></div>
+                <div className="w-full max-w-[150px]">
+                  <FaceShapeIcon code={item.code} active={false} />
+                </div>
               </div>
-              <div className="mt-1 text-lg font-semibold tracking-tight text-stone-900">{item.name}</div>
-              <div className="mt-2 text-xs leading-5 text-stone-500 md:min-h-[2.5rem]">{faceShapeUiCopy[item.code] || item.feature || "臉型特徵會依試算表資料帶入。"}</div>
-              <div className="mt-3 text-[10px] font-semibold tracking-[0.18em] text-rose-300">{item.code}</div>
+
+              <div className="mt-1 text-lg font-semibold tracking-tight text-stone-900">
+                {item.name}
+              </div>
+
+              <div className="mt-2 text-xs leading-5 text-stone-500 md:min-h-[2.5rem]">
+                {faceShapeUiCopy[item.code] || item.feature || "臉型特徵會依試算表資料帶入。"}
+              </div>
+
+              <div className="mt-3 text-[10px] font-semibold tracking-[0.18em] text-rose-300">
+                {item.code}
+              </div>
             </button>
           );
         })}
@@ -815,26 +881,79 @@ function ApiNotice({ apiState }) {
   );
 }
 
-function ProgressRail({ current, setCurrent }) {
+function ProgressRail({ current, setCurrent, data }) {
+  const isStepCompleted = (stepId) => {
+    switch (stepId) {
+      case "setup":
+        return Boolean(data?.clientName || data?.photo);
+
+      case "ai":
+        return Boolean(
+          data?.measurements?.faceLength ||
+          data?.measurements?.faceWidth ||
+          data?.face ||
+          data?.ratio ||
+          data?.line
+        );
+
+      case "face":
+        return Boolean(data?.face);
+
+      case "ratio":
+        return Boolean(data?.ratio);
+
+      case "age":
+        return Boolean(data?.age);
+
+      case "line":
+        return Boolean(data?.line);
+
+      case "volume":
+        return Boolean(data?.volume);
+
+      case "style":
+        return Boolean(data?.style);
+
+      case "recommend":
+        return Boolean(data?.recommendation || data?.finalReport);
+
+      default:
+        return false;
+    }
+  };
+
   return (
     <header className="mb-8 w-full max-w-full rounded-[2rem] bg-gradient-to-r from-stone-950 via-stone-900 to-stone-800 p-4 shadow-2xl shadow-stone-900/25 md:p-5">
       <div className="grid min-w-0 gap-6 xl:grid-cols-[240px_minmax(0,1fr)] xl:items-start">
         <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-sm font-bold tracking-widest text-white shadow-lg shadow-rose-500/40">JIS</div>
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-500 text-sm font-bold tracking-widest text-white shadow-lg shadow-rose-500/40">
+            JIS
+          </div>
+
           <div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-stone-500">Joanna Image System</div>
-            <h1 className="text-xl font-semibold leading-tight text-white">顏分析顧問系統</h1>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-stone-500">
+              Joanna Image System
+            </div>
+            <h1 className="text-xl font-semibold leading-tight text-white">
+              顏分析顧問系統
+            </h1>
           </div>
         </div>
 
         <div className="min-w-0">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="text-xs font-medium text-stone-500">顧問流程</div>
-            <div className="shrink-0 rounded-full bg-stone-800 px-4 py-2 text-xs font-medium text-stone-400">Step {current} / {steps.length - 1} · {steps[current]?.label}</div>
+
+            <div className="shrink-0 rounded-full bg-stone-800 px-4 py-2 text-xs font-medium text-stone-400">
+              Step {current + 1} / {steps.length} · {steps[current]?.label}
+            </div>
           </div>
+
           <div className="flex w-full max-w-full flex-wrap gap-2 pb-2 md:flex-wrap max-md:flex-nowrap max-md:overflow-x-auto max-md:overscroll-x-contain max-md:[scrollbar-width:none] max-md:[touch-action:pan-x] max-md:[&::-webkit-scrollbar]:hidden">
             {steps.map((step, index) => {
               const active = current === index;
+              const completed = isStepCompleted(step.id);
+
               return (
                 <button
                   key={step.id}
@@ -842,12 +961,24 @@ function ProgressRail({ current, setCurrent }) {
                   onClick={() => setCurrent(index)}
                   className={cx(
                     "flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2.5 text-sm transition-all duration-200 sm:px-4 sm:py-3",
-                    active ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30 ring-2 ring-white/80" : "bg-stone-800/70 text-stone-400 hover:bg-stone-700 hover:text-white"
+                    active
+                      ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30 ring-2 ring-white/80"
+                      : completed
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500"
+                        : "bg-stone-800/70 text-stone-400 hover:bg-stone-700 hover:text-white"
                   )}
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/10 text-xs">{step.icon}</span>
-                  <span className="hidden font-medium sm:inline">{step.label}</span>
-                  <span className="font-medium sm:hidden">{step.shortLabel}</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/10 text-xs">
+                    {completed && !active ? "✓" : step.icon}
+                  </span>
+
+                  <span className="hidden font-medium sm:inline">
+                    {step.label}
+                  </span>
+
+                  <span className="font-medium sm:hidden">
+                    {step.shortLabel}
+                  </span>
                 </button>
               );
             })}
@@ -1035,7 +1166,7 @@ function MobileBottomNavigator({ current, jumpToStep }) {
           ← 上一步
         </button>
         <div className="shrink-0 rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">
-          {current} / {steps.length - 1}
+          {current} / {steps.length}
         </div>
         <button
           type="button"
@@ -1054,7 +1185,7 @@ function StepNavigator({ current, jumpToStep }) {
   return (
     <div className="mb-8 flex items-center justify-between">
       <button type="button" onClick={() => jumpToStep(Math.max(0, current - 1))} disabled={current <= 0} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30">← 上一步</button>
-      <div className="rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">Step {current} / {steps.length - 1} · {steps[current]?.label}</div>
+      <div className="rounded-full bg-stone-100 px-4 py-2 text-xs font-semibold text-stone-600">Step {current + 1} / {steps.length} · {steps[current]?.label}</div>
       <button type="button" onClick={() => jumpToStep(Math.min(steps.length - 1, current + 1))} disabled={current === steps.length - 1} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-30">下一步 →</button>
     </div>
   );
@@ -1685,7 +1816,7 @@ export default function App() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-stone-50 p-4 pb-28 font-sans text-stone-900 md:p-8 selection:bg-rose-500 selection:text-white">
       <div className="mx-auto max-w-7xl">
-        <ProgressRail current={current} setCurrent={jumpToStep} />
+        <ProgressRail current={current} setCurrent={jumpToStep} data={data} />
         <MobileBottomNavigator current={current} jumpToStep={jumpToStep} />
 
         <div className="grid min-w-0 gap-8 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
