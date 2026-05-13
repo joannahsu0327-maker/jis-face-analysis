@@ -1797,7 +1797,12 @@ export default function App() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-stone-50 p-4 pb-28 font-sans text-stone-900 md:p-8 selection:bg-rose-500 selection:text-white">
       <div className="mx-auto max-w-7xl">
-        <ProgressRail current={current} setCurrent={jumpToStep} data={data} />
+        <ProgressRail
+  current={current}
+  setCurrent={jumpToStep}
+  data={data}
+  recommendState={recommendState}
+/>
         <MobileBottomNavigator current={current} jumpToStep={jumpToStep} />
 
         <div className="grid min-w-0 gap-8 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
