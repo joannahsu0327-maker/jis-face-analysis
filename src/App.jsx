@@ -1594,7 +1594,17 @@ function RecommendPanel({ data, options, saveState, recommendState, hairRecommen
   );
 }
 
+function runSelfChecks() {
+  const measurement = calculateFaceMeasurements({ faceLength: "100", faceWidth: "80", upperThird: "30", middleThird: "35", lowerThird: "35" });
+  console.assert(measurement.lengthWidthRatio.toFixed(2) === "1.25", "lengthWidthRatio should be 1.25");
+  console.assert(getHairImageUrl({ hairId: "H003", bangId: "B003", partId: "P001" }) === "/hair-library/h003-b003-p001.jpg", "hair image url should be normalized");
+  console.assert(steps.length === 9, "workflow should have 9 steps");
+  console.assert(typeof SingleChoiceGroup === "function", "SingleChoiceGroup should be defined before BasicPanel uses it");
+}
 
+if (typeof window !== "undefined") {
+  runSelfChecks();
+}
 
 export default function App() {
   const [current, setCurrent] = useState(0);
