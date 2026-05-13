@@ -1107,14 +1107,14 @@ function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer
       {open && (
         <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
             <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-stone-50">
-      <div className="aspect-[3/4] w-full">
-        {data.photo ? (
-          <img
-            src={data.photo}
-            alt="展開照片預覽"
-            className="h-full w-full object-cover"
-          />
-        ) : (
+      <div className="aspect-[3/4] max-h-[50vh] w-full overflow-hidden">
+  {data.photo ? (
+    <img
+      src={data.photo}
+      alt="展開照片預覽"
+      className="h-full w-full object-cover"
+    />
+  ) : (
           <div className="flex h-full w-full flex-col items-center justify-center text-stone-400">
             <div className="text-3xl">📷</div>
             <div className="mt-2 text-sm font-medium">尚未上傳照片</div>
