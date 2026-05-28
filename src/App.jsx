@@ -1486,7 +1486,42 @@ function buildConsultantReport(data, options, generated) {
     ],
   };
 }
+function ConsultantReportCard({ report }) {
+  return (
+    <div className="rounded-3xl border border-stone-200 bg-stone-50 p-6">
+      <div className="mb-5">
+        <div className="text-sm font-medium text-stone-500">顧問報告草稿</div>
+        <h3 className="mt-1 text-xl font-semibold text-stone-900">
+          {report.title}
+        </h3>
+        <p className="mt-3 leading-7 text-stone-700">
+          {report.summary}
+        </p>
+      </div>
 
+      <div className="space-y-4">
+        {report.sections.map((section) => (
+          <div key={section.title} className="rounded-3xl bg-white p-5 shadow-sm">
+            <div className="mb-3 text-sm font-semibold text-stone-900">
+              {section.title}
+            </div>
+
+            <div className="space-y-2">
+              {section.items.map((item, index) => (
+                <div
+                  key={`${section.title}-${index}`}
+                  className="rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 function ClientReportCard({ data, options, recommendState, hairRecommendState }) {
   const generated = recommendState?.result;
   const recommendations = hairRecommendState?.result?.recommendations || [];
@@ -1754,7 +1789,7 @@ if (typeof window !== "undefined") {
   runSelfChecks();
 }
 
-const DRAFT_STORAGE_KEY = "jis_face_analysis_draft_v2";
+const DRAFT_STORAGE_KEY = "jis_face_analysis_draft_v3";
 
 function loadDraftFromStorage() {
   if (typeof window === "undefined") return null;
@@ -2118,6 +2153,18 @@ const jumpToStep = (step) => {
                 <SingleSelectTagGroup title="色彩整合補充" groups={colorSeasonGroups} value={data.colorSeason || ""} onChange={(next) => handleMainChange("colorSeason", next)} />
                 <CheckboxTagGroup title={observationTagGroups.styleSupplementTags.title} hint={observationTagGroups.styleSupplementTags.hint} options={observationTagGroups.styleSupplementTags.options} value={data.styleSupplementTags || []} onChange={(next) => handleMainChange("styleSupplementTags", next.slice(-1))} />
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"><Field label="風格／色彩額外補充" hint="放與風格、色彩、整體氣質相關的補充，不放純結構觀察。"><textarea style={{ fontSize: 16 }} value={data.styleExtraNote || ""} onChange={(e) => handleMainChange("styleExtraNote", e.target.value)} className="min-h-28 w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：可保留 Fresh 感，但妝感不宜過透明。" /></Field></div>
+                <div className="rounded-3xl border border-rose-100 bg-rose-50/50 p-5 text-center">
+                  <div className="mb-3 text-sm font-semibold text-stone-900">
+                    風格分析完成後，請進入建議輸出
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => jumpToStep(8)}
+                    className="rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-white shadow-sm"
+                  >
+                    前往建議輸出
+                  </button>
+                </div>
               </AnalysisPanel>
             )}
             {current === 8 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} hairRecommendState={hairRecommendState} onGenerateRecommendation={handleGenerateRecommendation} onGenerateHairRecommendation={handleGenerateHairRecommendation} />}
