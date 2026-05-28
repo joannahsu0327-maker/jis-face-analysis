@@ -1458,22 +1458,32 @@ function buildDirectionNotes(data, options) {
 }
 
 function buildConsultantReport(data, options, generated) {
+  const title = `${getName(options.face, data.face)} × ${getName(options.ratio, data.ratio)} × ${getName(options.style, data.style)}`;
+
   if (generated) {
     return {
-      title: `${getName(options.face, data.face)} × ${getName(options.ratio, data.ratio)} × ${getName(options.style, data.style)}`,
+      title,
       summary: generated.summary || "",
       sections: [
         { title: "造型建議", items: [generated.styling || "尚未生成"] },
         { title: "眼鏡建議", items: [generated.glasses || "尚未生成"] },
         { title: "耳環建議", items: [generated.earrings || "尚未生成"] },
         { title: "妝容建議", items: [generated.makeup || "尚未生成"] },
+        { title: "顧問備註", items: [generated.consultantNote || "尚未生成"] },
+        { title: "衝突檢查", items: [generated.conflictCheck || "尚未生成"] },
       ],
     };
   }
+
   return {
-    title: `${getName(options.face, data.face)} × ${getName(options.ratio, data.ratio)} × ${getName(options.style, data.style)}`,
+    title,
     summary: `這位個案目前判定為 ${getName(options.face, data.face)}，比例狀態為 ${getName(options.ratio, data.ratio)}，直曲線屬於 ${getName(options.line, data.line)}，量感為 ${getName(options.volume, data.volume)}，整體風格定位為 ${getName(options.style, data.style)}。`,
-    sections: [{ title: "目前說明", items: ["尚未生成 S～W，請先儲存個案後再按生成整體建議。"] }],
+    sections: [
+      {
+        title: "目前說明",
+        items: ["尚未生成 S～Y，請先儲存個案後再按生成整體建議。"],
+      },
+    ],
   };
 }
 
@@ -1559,7 +1569,7 @@ function RecommendPanel({ data, options, saveState, recommendState, hairRecommen
         </div>
       )}
       {recommendState?.error && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{recommendState.error}</div>}
-      {recommendState?.status === "success" && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">已生成並寫入 01 客戶分析 S～W 欄。</div>}
+      {recommendState?.status === "success" && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">已生成並寫入客戶分析資料表</div>}
       <div className="rounded-3xl border border-stone-200 bg-white p-5"><div className="mb-4 text-sm font-semibold text-stone-800">分析摘要</div><div className="grid gap-3 md:grid-cols-2">{summary.map((item) => <div key={item} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-700">{item}</div>)}</div></div>
       <div className="rounded-3xl border border-stone-200 bg-white p-5">
         <div className="mb-4">
