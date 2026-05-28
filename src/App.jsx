@@ -1616,33 +1616,96 @@ if (typeof window !== "undefined") {
   runSelfChecks();
 }
 
+cconst DRAFT_STORAGE_KEY = "jis_face_analysis_draft_v2";
+
+function loadDraftFromStorage() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+
+    return JSON.parse(raw);
+  } catch (error) {
+    console.warn("讀取暫存草稿失敗", error);
+    return null;
+  }
+}
+
+function saveDraftToStorage(draft) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch (error) {
+    console.warn("儲存暫存草稿失敗", error);
+  }
+}
+
+function clearDraftFromStorage() {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch (error) {
+    console.warn("清除暫存草稿失敗", error);
+  }
+}
+
 export default function App() {
-  const [current, setCurrent] = useState(0);
+  const savedDraft = useMemo(() => loadDraftFromStorage(), []);
+  const [current, setCurrent] = useState(savedDraft?.current ?? 0);
   const contentTopRef = useRef(null);
   const stepContentRef = useRef(null);
   const [options, setOptions] = useState(fallbackOptions);
   const [apiStates, setApiStates] = useState({ face: { status: "idle", error: "" }, ratio: { status: "idle", error: "" }, line: { status: "idle", error: "" }, volume: { status: "idle", error: "" }, style: { status: "idle", error: "" }, age: { status: "idle", error: "" } });
-  const [data, setData] = useState({
-    clientName: "", need: "完整形象報告", photo: null, aiProvider: "gemini",
-    measurements: { faceLength: "", faceWidth: "", upperThird: "", middleThird: "", lowerThird: "" },
-    eyeObservation: "", extraObservation: "", styleExtraNote: "", colorSeason: "",
-    ageAssessment: {}, lineAssessment: {},
-    eyeDistance: "", featureDistribution: "", faceBlank: "", visualFocus: "",
-    faceDetailTags: [], ratioFocusTags: [], featureStructureTags: [], correctionGoalTags: [], styleSupplementTags: [],
-    face: "", ratio: "", line: "", volume: "", style: "", age: "",
-  });
+const defaultData = {
+  clientName: "", need: "完整形象報告", photo: null, aiProvider: "gemini",
+  measurements: { faceLength: "", faceWidth: "", upperThird: "", middleThird: "", lowerThird: "" },
+  eyeObservation: "", extraObservation: "", styleExtraNote: "", colorSeason: "",
+  ageAssessment: {}, lineAssessment: {},
+  eyeDistance: "", featureDistribution: "", faceBlank: "", visualFocus: "",
+  faceDetailTags: [], ratioFocusTags: [], featureStructureTags: [], correctionGoalTags: [], styleSupplementTags: [],
+  face: "", ratio: "", line: "", volume: "", style: "", age: "",
+};
+
+const [data, setData] = useState({
+  ...defaultData,
+  ...(savedDraft?.data || {}),
+  measurements: {
+    ...defaultData.measurements,
+    ...(savedDraft?.data?.measurements || {}),
+  },
+});
   const [aiState, setAiState] = useState({ status: "idle", error: "", result: null, mapped: null });
   const [landmarkState, setLandmarkState] = useState({ status: "idle", error: "" });
-  const [saveState, setSaveState] = useState({ status: "idle", error: "", rowNumber: null, customerId: "" });
-  const [recommendState, setRecommendState] = useState({ status: "idle", error: "", result: null });
-  const [hairRecommendState, setHairRecommendState] = useState({ status: "idle", error: "", result: null });
+const [saveState, setSaveState] = useState(
+  savedDraft?.saveState || { status: "idle", error: "", rowNumber: null, customerId: "" }
+);
+
+const [recommendState, setRecommendState] = useState(
+  savedDraft?.recommendState || { status: "idle", error: "", result: null }
+);
+
+const [hairRecommendState, setHairRecommendState] = useState(
+  savedDraft?.hairRecommendState || { status: "idle", error: "", result: null }
+);
 
   const resetSave = () => {
     setSaveState({ status: "idle", error: "", rowNumber: null, customerId: "" });
     setRecommendState({ status: "idle", error: "", result: null });
     setHairRecommendState({ status: "idle", error: "", result: null });
   };
-
+useEffect(() => {
+  saveDraftToStorage({
+    current,
+    data,
+    saveState,
+    recommendState,
+    hairRecommendState,
+    savedAt: new Date().toISOString(),
+  });
+}, [current, data, saveState, recommendState, hairRecommendState]);
 const jumpToStep = (step) => {
   setCurrent(step);
   setTimeout(() => {
@@ -1829,6 +1892,21 @@ const jumpToStep = (step) => {
   data={data}
   recommendState={recommendState}
 />
+        <div className="mb-6 flex justify-end">
+  <button
+    type="button"
+    onClick={() => {
+      const confirmed = window.confirm("確定要清除目前暫存草稿，重新建立新個案嗎？");
+      if (!confirmed) return;
+
+      clearDraftFromStorage();
+      window.location.reload();
+    }}
+    className="rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-500 hover:bg-stone-50"
+  >
+    清除暫存／建立新個案
+  </button>
+</div>
         <MobileBottomNavigator current={current} jumpToStep={jumpToStep} />
 
         <div className="grid min-w-0 gap-8 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
