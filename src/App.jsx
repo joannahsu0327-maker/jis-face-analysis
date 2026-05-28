@@ -166,9 +166,11 @@ function calculateFaceMeasurements(measurements) {
 
   let faceRatioLabel = "尚未輸入完整長寬";
   if (lengthWidthRatio) {
-    if (lengthWidthRatio < 1.18) faceRatioLabel = "偏短寬 / 圓感較明顯";
-    else if (lengthWidthRatio <= 1.35) faceRatioLabel = "長寬比例平衡";
-    else faceRatioLabel = "偏長臉 / 縱向感較明顯";
+    if (lengthWidthRatio < 1.25) faceRatioLabel = "偏短寬 / 圓感較明顯";
+    else if (lengthWidthRatio <= 1.35) faceRatioLabel = "偏圓 / 圓橢型";
+    else if (lengthWidthRatio <= 1.45) faceRatioLabel = "標準橢圓";
+    else if (lengthWidthRatio <= 1.55) faceRatioLabel = "橢圓偏長";
+    else faceRatioLabel = "長臉明顯";
   }
 
   let thirdsLabel = "尚未輸入完整三庭";
@@ -1227,7 +1229,8 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
         </div>
       </div>
 
-      {saveState?.status === "success" && <div className="mb-4 rounded-2xl bg-emerald-50 px-4 py-2 text-xs leading-5 text-emerald-700">已儲存至第 {saveState.rowNumber} 列。</div>}
+      {saveState?.status === "success" && <div className="mb-4 rounded-2xl bg-emerald-50 px-4 py-2 text-xs leading-5 text-emerald-700">{saveState.mode === "updated" ? "已更新原本個案" : "已儲存新個案"}，第 {saveState.rowNumber} 列。</div>}
+      {saveState?.status === "edited" && <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-700">此個案已修改，請再次按「儲存個案到 01」更新原本資料列。</div>}
       {saveState?.error && <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-2 text-xs leading-5 text-rose-700">{saveState.error}</div>}
 
       <div className="space-y-5">
@@ -1486,6 +1489,8 @@ function buildConsultantReport(data, options, generated) {
     ],
   };
 }
+
+
 function ConsultantReportCard({ report }) {
   return (
     <div className="rounded-3xl border border-stone-200 bg-stone-50 p-6">
@@ -1522,6 +1527,7 @@ function ConsultantReportCard({ report }) {
     </div>
   );
 }
+
 function ClientReportCard({ data, options, recommendState, hairRecommendState }) {
   const generated = recommendState?.result;
   const recommendations = hairRecommendState?.result?.recommendations || [];
@@ -1869,6 +1875,21 @@ const [hairRecommendState, setHairRecommendState] = useState(
     setRecommendState({ status: "idle", error: "", result: null });
     setHairRecommendState({ status: "idle", error: "", result: null });
   };
+
+  const markCustomerEdited = () => {
+    setSaveState((prev) => {
+      if (!prev?.rowNumber) return prev;
+
+      return {
+        ...prev,
+        status: "edited",
+        error: "",
+      };
+    });
+
+    setRecommendState({ status: "idle", error: "", result: null });
+    setHairRecommendState({ status: "idle", error: "", result: null });
+  };
 useEffect(() => {
   saveDraftToStorage({
     current,
@@ -1918,7 +1939,7 @@ const jumpToStep = (step) => {
 
   const handleMainChange = (key, val) => {
     setData((prev) => ({ ...prev, [key]: val }));
-    resetSave();
+    markCustomerEdited();
   };
 
   const handleLandmarkMeasure = async () => {
@@ -1945,7 +1966,7 @@ const jumpToStep = (step) => {
       }
       setData((prev) => ({ ...prev, measurements: { ...(prev.measurements || {}), ...measured }, ratioFocusTags: [focusTag] }));
       setLandmarkState({ status: "success", error: "" });
-      resetSave();
+      markCustomerEdited();
     } catch (error) {
       setLandmarkState({ status: "error", error: formatClientError(error) });
     }
@@ -1967,14 +1988,20 @@ const jumpToStep = (step) => {
         ...(mapped.age ? { age: mapped.age } : {}),
       }));
       setAiState({ status: "success", error: "", result, mapped });
-      resetSave();
+      markCustomerEdited();
     } catch (error) {
       setAiState({ status: "error", error: formatClientError(error), result: null, mapped: null });
     }
   };
 
   const handleSaveCustomer = async () => {
-    setSaveState({ status: "loading", error: "", rowNumber: null, customerId: "" });
+    setSaveState((prev) => ({
+      status: "loading",
+      error: "",
+      rowNumber: prev?.rowNumber || null,
+      customerId: prev?.customerId || "",
+      mode: prev?.mode || "",
+    }));
     setRecommendState({ status: "idle", error: "", result: null });
     setHairRecommendState({ status: "idle", error: "", result: null });
     try {
@@ -1998,6 +2025,8 @@ const jumpToStep = (step) => {
 
       const payload = {
         action: "saveCustomer",
+        rowNumber: saveState?.rowNumber || "",
+        customerId: saveState?.customerId || "",
         data: {
           name: data.clientName || "未命名個案",
           date: new Date().toISOString().slice(0, 10),
@@ -2028,9 +2057,15 @@ const jumpToStep = (step) => {
         },
       };
       const result = await postJson(payload);
-      setSaveState({ status: "success", error: "", rowNumber: result?.rowNumber, customerId: result?.customerId || "" });
+      setSaveState({ status: "success", error: "", rowNumber: result?.rowNumber, customerId: result?.customerId || "", mode: result?.mode || "created" });
     } catch (error) {
-      setSaveState({ status: "error", error: formatClientError(error), rowNumber: null, customerId: "" });
+      setSaveState((prev) => ({
+        status: "error",
+        error: formatClientError(error),
+        rowNumber: prev?.rowNumber || null,
+        customerId: prev?.customerId || "",
+        mode: prev?.mode || "",
+      }));
     }
   };
 
@@ -2108,6 +2143,27 @@ const jumpToStep = (step) => {
             {current === 1 && <BasicPanel data={data} setData={setData} options={options} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} setCurrent={jumpToStep} />}
             {current === 2 && (
               <AnalysisPanel title="臉型分析 FS" description="判斷臉部輪廓與骨架感。" label="選擇臉型" options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} apiState={apiStates.face} onReload={() => reloadOptionGroup("face")} selectorOverride={<FaceShapeGrid options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} loading={apiStates.face.status === "loading" && options.face.length === 0} />}>
+                <div className="rounded-3xl border border-amber-100 bg-amber-50/60 p-5 text-sm leading-7 text-stone-700">
+                  <div className="mb-2 font-semibold text-stone-900">臉長寬比參考</div>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <div className="rounded-2xl bg-white px-4 py-3">
+                      <span className="font-semibold">1.25–1.35</span> → 偏圓 / 圓橢型
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3">
+                      <span className="font-semibold">1.35–1.45</span> → 標準橢圓
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3">
+                      <span className="font-semibold">1.45–1.55</span> → 橢圓偏長
+                    </div>
+                    <div className="rounded-2xl bg-white px-4 py-3">
+                      <span className="font-semibold">1.55 以上</span> → 長臉明顯
+                    </div>
+                  </div>
+                  <div className="mt-3 text-xs leading-6 text-stone-500">
+                    此數值為輔助參考，仍需搭配下顎線、顴骨、下巴與整體視覺感判斷，不單獨決定臉型。
+                  </div>
+                </div>
+
                 <GroupedCheckboxTagGroup title={observationTagGroups.faceDetailTags.title} hint={observationTagGroups.faceDetailTags.hint} sections={faceDetailTagSections} value={data.faceDetailTags || []} onChange={(next) => handleMainChange("faceDetailTags", next)} />
               </AnalysisPanel>
             )}
@@ -2153,18 +2209,6 @@ const jumpToStep = (step) => {
                 <SingleSelectTagGroup title="色彩整合補充" groups={colorSeasonGroups} value={data.colorSeason || ""} onChange={(next) => handleMainChange("colorSeason", next)} />
                 <CheckboxTagGroup title={observationTagGroups.styleSupplementTags.title} hint={observationTagGroups.styleSupplementTags.hint} options={observationTagGroups.styleSupplementTags.options} value={data.styleSupplementTags || []} onChange={(next) => handleMainChange("styleSupplementTags", next.slice(-1))} />
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"><Field label="風格／色彩額外補充" hint="放與風格、色彩、整體氣質相關的補充，不放純結構觀察。"><textarea style={{ fontSize: 16 }} value={data.styleExtraNote || ""} onChange={(e) => handleMainChange("styleExtraNote", e.target.value)} className="min-h-28 w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：可保留 Fresh 感，但妝感不宜過透明。" /></Field></div>
-                <div className="rounded-3xl border border-rose-100 bg-rose-50/50 p-5 text-center">
-                  <div className="mb-3 text-sm font-semibold text-stone-900">
-                    風格分析完成後，請進入建議輸出
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => jumpToStep(8)}
-                    className="rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-white shadow-sm"
-                  >
-                    前往建議輸出
-                  </button>
-                </div>
               </AnalysisPanel>
             )}
             {current === 8 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} hairRecommendState={hairRecommendState} onGenerateRecommendation={handleGenerateRecommendation} onGenerateHairRecommendation={handleGenerateHairRecommendation} />}
