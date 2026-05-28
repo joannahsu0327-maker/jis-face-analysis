@@ -1487,15 +1487,145 @@ function buildConsultantReport(data, options, generated) {
   };
 }
 
-function ConsultantReportCard({ report }) {
+function ClientReportCard({ data, options, recommendState, hairRecommendState }) {
+  const generated = recommendState?.result;
+  const recommendations = hairRecommendState?.result?.recommendations || [];
+
+  const profileRows = [
+    ["臉型", getName(options.face, data.face)],
+    ["風格", getName(options.style, data.style)],
+    ["年齡感", getName(options.age, data.age)],
+    ["比例", getName(options.ratio, data.ratio)],
+    ["直曲", getName(options.line, data.line)],
+    ["量感", getName(options.volume, data.volume)],
+  ];
+
+  if (!generated) {
+    return (
+      <div className="rounded-3xl border border-stone-200 bg-white p-5">
+        <div className="text-sm font-semibold text-stone-800">客戶版報告預覽</div>
+        <div className="mt-3 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-400">
+          尚未生成整體建議。請先按「生成整體建議」。
+        </div>
+      </div>
+    );
+  }
+
+  const clientText = [
+    "【顏分析定位】",
+    profileRows.map(([label, value]) => `${label}：${value}`).join("\n"),
+    "",
+    "【報告摘要】",
+    generated.summary || "",
+    "",
+    "【髮型推薦】",
+    recommendations.length
+      ? recommendations
+          .map((item, index) => {
+            return `TOP ${index + 1}｜${item.hair}＋${item.bang}＋${item.part}\n${item.reason || item.reportText || ""}`;
+          })
+          .join("\n\n")
+      : "尚未生成髮型推薦。",
+    "",
+    "【造型建議】",
+    generated.styling || "",
+    "",
+    "【眼鏡建議】",
+    generated.glasses || "",
+    "",
+    "【耳環建議】",
+    generated.earrings || "",
+    "",
+    "【妝容建議】",
+    generated.makeup || "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(clientText);
+      window.alert("已複製客戶版報告。");
+    } catch (error) {
+      window.alert("複製失敗，請手動選取文字複製。");
+    }
+  };
+
   return (
-    <div className="rounded-3xl border border-stone-200 bg-stone-50 p-6">
-      <div className="mb-5"><div className="text-sm font-medium text-stone-500">顧問報告草稿</div><h3 className="mt-1 text-xl font-semibold text-stone-900">{report.title}</h3><p className="mt-3 leading-7 text-stone-700">{report.summary}</p></div>
+    <div className="rounded-3xl border border-rose-100 bg-rose-50/30 p-5">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-stone-900">客戶版報告預覽</div>
+          <div className="mt-1 text-xs leading-5 text-stone-500">
+            這一區只保留可給客人看的內容，不顯示顧問備註、衝突檢查、推薦分數與命中條件。
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white shadow-sm"
+        >
+          複製客戶版報告
+        </button>
+      </div>
+
       <div className="space-y-4">
-        {report.sections.map((section) => (
-          <div key={section.title} className="rounded-3xl bg-white p-5 shadow-sm">
-            <div className="mb-3 text-sm font-semibold text-stone-900">{section.title}</div>
-            <div className="space-y-2">{section.items.map((item, index) => <div key={`${section.title}-${index}`} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">{item}</div>)}</div>
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <div className="mb-3 text-sm font-semibold text-stone-900">顏分析定位</div>
+          <div className="grid gap-2 md:grid-cols-3">
+            {profileRows.map(([label, value]) => (
+              <div key={label} className="rounded-2xl bg-stone-50 px-4 py-3">
+                <div className="text-xs text-stone-400">{label}</div>
+                <div className="mt-1 text-sm font-semibold text-stone-800">{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <div className="mb-2 text-sm font-semibold text-stone-900">報告摘要</div>
+          <div className="text-sm leading-7 text-stone-700">
+            {generated.summary || "尚未生成"}
+          </div>
+        </div>
+
+        <div className="rounded-3xl bg-white p-5 shadow-sm">
+          <div className="mb-3 text-sm font-semibold text-stone-900">髮型推薦 TOP1～TOP3</div>
+          {recommendations.length ? (
+            <div className="space-y-3">
+              {recommendations.map((item, index) => (
+                <div key={`${item.hairId}-${item.bangId}-${item.partId}-${index}`} className="rounded-2xl bg-stone-50 px-4 py-3">
+                  <div className="text-xs font-semibold tracking-widest text-rose-400">
+                    TOP {index + 1}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-stone-900">
+                    {item.hair}＋{item.bang}＋{item.part}
+                  </div>
+                  <div className="mt-2 text-sm leading-6 text-stone-700">
+                    {item.reason || item.reportText || "尚未生成說明"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-400">
+              尚未生成髮型推薦。
+            </div>
+          )}
+        </div>
+
+        {[
+          ["造型建議", generated.styling],
+          ["眼鏡建議", generated.glasses],
+          ["耳環建議", generated.earrings],
+          ["妝容建議", generated.makeup],
+        ].map(([title, content]) => (
+          <div key={title} className="rounded-3xl bg-white p-5 shadow-sm">
+            <div className="mb-2 text-sm font-semibold text-stone-900">{title}</div>
+            <div className="text-sm leading-7 text-stone-700">
+              {content || "尚未生成"}
+            </div>
           </div>
         ))}
       </div>
@@ -1598,8 +1728,16 @@ function RecommendPanel({ data, options, saveState, recommendState, hairRecommen
         </div>
       </div>
       <div className="rounded-3xl border border-stone-200 bg-white p-5"><div className="mb-4 text-sm font-semibold text-stone-800">修飾方向</div><div className="space-y-2">{directionNotes.map((note) => <div key={note} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">{note}</div>)}</div></div>
-      <HairRecommendationCard hairRecommendState={hairRecommendState} />
-      <ConsultantReportCard report={report} />
+<HairRecommendationCard hairRecommendState={hairRecommendState} />
+
+<ClientReportCard
+  data={data}
+  options={options}
+  recommendState={recommendState}
+  hairRecommendState={hairRecommendState}
+/>
+
+<ConsultantReportCard report={report} />
     </section>
   );
 }
@@ -1616,7 +1754,7 @@ if (typeof window !== "undefined") {
   runSelfChecks();
 }
 
-cconst DRAFT_STORAGE_KEY = "jis_face_analysis_draft_v2";
+const DRAFT_STORAGE_KEY = "jis_face_analysis_draft_v2";
 
 function loadDraftFromStorage() {
   if (typeof window === "undefined") return null;
