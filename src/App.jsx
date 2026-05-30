@@ -68,7 +68,7 @@ async function getFaceLandmarker() {
 
   const loaded = await loadMediapipe();
   const vision = await loaded.FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
   );
 
   try {
@@ -1198,11 +1198,11 @@ function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer
               saveState?.status === "edited" ? "bg-amber-700" : "bg-stone-900"
             )}
           >
-            {saveState?.status === "loading"
-              ? "儲存中…"
-              : saveState?.status === "edited"
-                ? "重新儲存到 01"
-                : "儲存個案到 01"}
+{saveState?.status === "loading"
+  ? "儲存中…"
+  : saveState?.status === "edited"
+    ? "重新儲存到 01"
+    : "儲存個案到 01"}
           </button>
         </div>
       )}
@@ -1283,7 +1283,21 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-600">{connectedCount}/6 已讀取</span>
-          <button type="button" disabled={saveState?.status === "loading"} onClick={onSaveCustomer} className="rounded-full bg-stone-900 px-4 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-40">{saveState?.status === "loading" ? "儲存中…" : "儲存個案到 01"}</button>
+          <button
+            type="button"
+            disabled={saveState?.status === "loading"}
+            onClick={onSaveCustomer}
+            className={cx(
+              "rounded-full px-4 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-40",
+              saveState?.status === "edited" ? "bg-amber-700" : "bg-stone-900"
+            )}
+          >
+            {saveState?.status === "loading"
+              ? "儲存中…"
+              : saveState?.status === "edited"
+                ? "重新儲存到 01"
+                : "儲存個案到 01"}
+          </button>
         </div>
       </div>
 
