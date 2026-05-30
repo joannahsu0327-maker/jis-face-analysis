@@ -5,12 +5,12 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  * 修正版重點：
  * 1. 修正 unterminated string constant：所有 join("\n") 均使用合法字串。
  * 2. MediaPipe 改成安全非同步載入，避免 FaceLandmarker / FilesetResolver 尚未初始化就使用。
- * 3. 10 Step 流程：建立個案 → 照片觀察 → AI 初判與量測 → FS / RT / AG / LC / VM / ST → 建議輸出。
+ * 3. 9 Step 流程：建立個案 → AI 初判與量測 → FS / RT / AG / LC / VM / ST → 建議輸出。
  * 4. FaceShapeGrid 加入分組篩選。
  **************************************************/
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbwZJgfS9tljPFWcjv9mfLuDJI4SKiC5RzeZJSglLrRDW_ecWa4CFitweMggh2mqIvmwhg/exec";
+  "https://script.google.com/macros/s/AKfycbzNYsYm2_zzfpHSay8cQQNPZoN_BpbwadpcC4G7kA0v9TOVzabpxVqDllhAS-X8rXqViA/exec";
 
 const STYLE_MAP_IMAGE_URL =
   "https://drive.google.com/thumbnail?id=1qJ-qTIeGXjYeh3IFW8qecjQ79GP1POIk&sz=w1600";
@@ -144,6 +144,42 @@ function loadImageFromBase64(src) {
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
+  });
+}
+
+function compressImageFile(file, maxSize = 1200, quality = 0.78) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const img = new Image();
+
+      img.onload = () => {
+        const width = img.naturalWidth || img.width;
+        const height = img.naturalHeight || img.height;
+        const scale = Math.min(1, maxSize / Math.max(width, height));
+        const targetWidth = Math.round(width * scale);
+        const targetHeight = Math.round(height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(String(reader.result || ""));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+
+      img.onerror = () => resolve(String(reader.result || ""));
+      img.src = String(reader.result || "");
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
 }
 
@@ -883,7 +919,7 @@ function ApiNotice({ apiState }) {
   );
 }
 
-function ProgressRail({ current, setCurrent, data, recommendState }) {
+function ProgressRail({ current, setCurrent, data, recommendState, hairRecommendState, formattedReportState }) {
   const isStepCompleted = (stepId) => {
     switch (stepId) {
       case "setup":
@@ -917,7 +953,11 @@ function ProgressRail({ current, setCurrent, data, recommendState }) {
         return Boolean(data?.style);
 
       case "recommend":
-        return Boolean(recommendState?.result);
+        return Boolean(
+          recommendState?.result ||
+          hairRecommendState?.result ||
+          formattedReportState?.result
+        );
 
       default:
         return false;
@@ -1143,13 +1183,26 @@ function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer
             ))}
           </div>
 
+          {saveState?.status === "edited" && (
+            <div className="rounded-2xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-700">
+              個案已修改，請重新儲存到 01。
+            </div>
+          )}
+
           <button
             type="button"
             onClick={onSaveCustomer}
             disabled={saveState?.status === "loading"}
-            className="mt-2 w-full rounded-full bg-stone-900 px-4 py-3 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+            className={cx(
+              "mt-2 w-full rounded-full px-4 py-3 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40",
+              saveState?.status === "edited" ? "bg-amber-700" : "bg-stone-900"
+            )}
           >
-            {saveState?.status === "loading" ? "儲存中…" : "儲存個案到 01"}
+            {saveState?.status === "loading"
+              ? "儲存中…"
+              : saveState?.status === "edited"
+                ? "重新儲存到 01"
+                : "儲存個案到 01"}
           </button>
         </div>
       )}
@@ -1208,12 +1261,17 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
     { key: "colorSeason", label: "色彩季型補充", value: data.colorSeason || "未選擇", code: "", targetStep: 7 },
   ];
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setData((prev) => ({ ...prev, photo: reader.result }));
-    reader.readAsDataURL(file);
+
+    try {
+      const compressedPhoto = await compressImageFile(file);
+      setData((prev) => ({ ...prev, photo: compressedPhoto }));
+    } catch (error) {
+      window.alert("照片讀取失敗，請重新選擇一張照片。");
+      console.warn("照片壓縮或讀取失敗", error);
+    }
   };
 
   return (
@@ -1229,8 +1287,16 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
         </div>
       </div>
 
-      {saveState?.status === "success" && <div className="mb-4 rounded-2xl bg-emerald-50 px-4 py-2 text-xs leading-5 text-emerald-700">{saveState.mode === "updated" ? "已更新原本個案" : "已儲存新個案"}，第 {saveState.rowNumber} 列。</div>}
-      {saveState?.status === "edited" && <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-700">此個案已修改，請再次按「儲存個案到 01」更新原本資料列。</div>}
+      {saveState?.status === "success" && (
+        <div className="mb-4 rounded-2xl bg-emerald-50 px-4 py-2 text-xs leading-5 text-emerald-700">
+          {saveState.mode === "updated" ? "已更新" : "已儲存"}至第 {saveState.rowNumber} 列。
+        </div>
+      )}
+      {saveState?.status === "edited" && (
+        <div className="mb-4 rounded-2xl bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-700">
+          個案已修改，請重新儲存到 01。
+        </div>
+      )}
       {saveState?.error && <div className="mb-4 rounded-2xl bg-rose-50 px-4 py-2 text-xs leading-5 text-rose-700">{saveState.error}</div>}
 
       <div className="space-y-5">
@@ -1270,12 +1336,17 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
 function SetupPanel({ data, setData }) {
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setData((prev) => ({ ...prev, photo: reader.result }));
-    reader.readAsDataURL(file);
+
+    try {
+      const compressedPhoto = await compressImageFile(file);
+      setData((prev) => ({ ...prev, photo: compressedPhoto }));
+    } catch (error) {
+      window.alert("照片讀取失敗，請重新選擇一張照片。");
+      console.warn("照片壓縮或讀取失敗", error);
+    }
   };
 
   return (
@@ -1489,8 +1560,6 @@ function buildConsultantReport(data, options, generated) {
     ],
   };
 }
-
-
 function ConsultantReportCard({ report }) {
   return (
     <div className="rounded-3xl border border-stone-200 bg-stone-50 p-6">
@@ -1524,6 +1593,92 @@ function ConsultantReportCard({ report }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function FormattedReportCard({ formattedReportState }) {
+  const result = formattedReportState?.result;
+
+  const sections = [
+    ["01｜年齡感定位", result?.agePage],
+    ["02｜直曲線定位", result?.linePage],
+    ["03｜臉型分析", result?.facePage],
+    ["04｜三庭五眼比例分析", result?.ratioPage],
+    ["05｜五官整體風格", result?.stylePage],
+    ["06｜妝容建議", result?.makeupPage],
+    ["07｜髮長與瀏海建議", result?.hairPage],
+    ["08｜耳環建議", result?.earringsPage],
+  ];
+
+  const reportText = sections
+    .map(([title, content]) => `${title}\n${content || ""}`)
+    .join("\n\n");
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(reportText);
+      window.alert("已複製正式報告格式。");
+    } catch (error) {
+      window.alert("複製失敗，請手動選取文字複製。");
+    }
+  };
+
+  return (
+    <div className="rounded-3xl border border-amber-100 bg-amber-50/40 p-5">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-stone-900">
+            正式客戶報告預覽
+          </div>
+          <div className="mt-1 text-xs leading-5 text-stone-500">
+            依照 Joanna 原本顏分析報告書格式：年齡感、直曲、臉型、比例、風格、妝容、髮型、耳環。
+          </div>
+        </div>
+
+        {result && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white shadow-sm"
+          >
+            複製正式報告
+          </button>
+        )}
+      </div>
+
+      {formattedReportState?.status === "idle" && (
+        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-stone-400">
+          尚未生成正式報告格式。
+        </div>
+      )}
+
+      {formattedReportState?.status === "loading" && (
+        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-stone-500">
+          正式報告生成中…
+        </div>
+      )}
+
+      {formattedReportState?.error && (
+        <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
+          {formattedReportState.error}
+        </div>
+      )}
+
+      {result && (
+        <div className="space-y-4">
+          {sections.map(([title, content]) => (
+            <div key={title} className="rounded-3xl bg-white p-5 shadow-sm">
+              <div className="mb-2 text-sm font-semibold text-stone-900">
+                {title}
+              </div>
+              <div className="whitespace-pre-line text-sm leading-7 text-stone-700">
+                {content || "尚未生成"}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1712,7 +1867,17 @@ function HairRecommendationCard({ hairRecommendState }) {
   );
 }
 
-function RecommendPanel({ data, options, saveState, recommendState, hairRecommendState, onGenerateRecommendation, onGenerateHairRecommendation }) {
+function RecommendPanel({
+  data,
+  options,
+  saveState,
+  recommendState,
+  hairRecommendState,
+  formattedReportState,
+  onGenerateRecommendation,
+  onGenerateHairRecommendation,
+  onGenerateFormattedReport,
+}) {
   const report = useMemo(() => buildConsultantReport(data, options, recommendState?.result), [data, options, recommendState?.result]);
   const directionNotes = useMemo(() => buildDirectionNotes(data, options), [data, options]);
   const summary = [
@@ -1729,6 +1894,7 @@ function RecommendPanel({ data, options, saveState, recommendState, hairRecommen
         <div><h2 className="text-2xl font-semibold text-stone-900">建議輸出</h2><p className="mt-2 text-stone-500">先儲存個案，再生成整體建議與髮型推薦。</p></div>
         <div className="flex flex-wrap gap-3">
           <button onClick={onGenerateHairRecommendation} disabled={!saveState?.rowNumber || hairRecommendState?.status === "loading"} className="rounded-full border border-stone-200 bg-white px-5 py-2 text-sm text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">{hairRecommendState?.status === "loading" ? "髮型計算中…" : "生成髮型推薦"}</button>
+          <button onClick={onGenerateFormattedReport} disabled={!saveState?.rowNumber || formattedReportState?.status === "loading"} className="rounded-full border border-amber-200 bg-amber-50 px-5 py-2 text-sm text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40">{formattedReportState?.status === "loading" ? "正式報告生成中…" : "生成正式報告格式"}</button>
           <button onClick={onGenerateRecommendation} disabled={!saveState?.rowNumber || recommendState?.status === "loading"} className="rounded-full bg-stone-900 px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40">{recommendState?.status === "loading" ? "生成中…" : "生成整體建議"}</button>
         </div>
       </header>
@@ -1770,6 +1936,8 @@ function RecommendPanel({ data, options, saveState, recommendState, hairRecommen
       </div>
       <div className="rounded-3xl border border-stone-200 bg-white p-5"><div className="mb-4 text-sm font-semibold text-stone-800">修飾方向</div><div className="space-y-2">{directionNotes.map((note) => <div key={note} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">{note}</div>)}</div></div>
 <HairRecommendationCard hairRecommendState={hairRecommendState} />
+
+<FormattedReportCard formattedReportState={formattedReportState} />
 
 <ClientReportCard
   data={data}
@@ -1814,10 +1982,30 @@ function loadDraftFromStorage() {
 function saveDraftToStorage(draft) {
   if (typeof window === "undefined") return;
 
+  const safeDraft = {
+    ...draft,
+    data: {
+      ...(draft?.data || {}),
+      photo: draft?.data?.photo || null,
+    },
+  };
+
   try {
-    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(safeDraft));
   } catch (error) {
-    console.warn("儲存暫存草稿失敗", error);
+    try {
+      const draftWithoutPhoto = {
+        ...safeDraft,
+        data: {
+          ...(safeDraft?.data || {}),
+          photo: null,
+        },
+      };
+      window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftWithoutPhoto));
+      console.warn("照片較大，已暫存文字資料但未暫存照片。", error);
+    } catch (secondError) {
+      console.warn("儲存暫存草稿失敗", secondError);
+    }
   }
 }
 
@@ -1869,26 +2057,22 @@ const [recommendState, setRecommendState] = useState(
 const [hairRecommendState, setHairRecommendState] = useState(
   savedDraft?.hairRecommendState || { status: "idle", error: "", result: null }
 );
-
-  const resetSave = () => {
-    setSaveState({ status: "idle", error: "", rowNumber: null, customerId: "" });
-    setRecommendState({ status: "idle", error: "", result: null });
-    setHairRecommendState({ status: "idle", error: "", result: null });
-  };
+const [formattedReportState, setFormattedReportState] = useState(
+  savedDraft?.formattedReportState || { status: "idle", error: "", result: null }
+);
 
   const markCustomerEdited = () => {
     setSaveState((prev) => {
       if (!prev?.rowNumber) return prev;
-
       return {
         ...prev,
         status: "edited",
         error: "",
       };
     });
-
     setRecommendState({ status: "idle", error: "", result: null });
     setHairRecommendState({ status: "idle", error: "", result: null });
+    setFormattedReportState({ status: "idle", error: "", result: null });
   };
 useEffect(() => {
   saveDraftToStorage({
@@ -1897,9 +2081,10 @@ useEffect(() => {
     saveState,
     recommendState,
     hairRecommendState,
+    formattedReportState,
     savedAt: new Date().toISOString(),
   });
-}, [current, data, saveState, recommendState, hairRecommendState]);
+}, [current, data, saveState, recommendState, hairRecommendState, formattedReportState]);
 const jumpToStep = (step) => {
   setCurrent(step);
   setTimeout(() => {
@@ -1940,6 +2125,19 @@ const jumpToStep = (step) => {
   const handleMainChange = (key, val) => {
     setData((prev) => ({ ...prev, [key]: val }));
     markCustomerEdited();
+  };
+
+  const updateDataAndMarkEdited = (updater) => {
+    setData((prev) =>
+      typeof updater === "function" ? updater(prev) : { ...prev, ...updater }
+    );
+    markCustomerEdited();
+  };
+
+  const updateSetupData = (updater) => {
+    setData((prev) =>
+      typeof updater === "function" ? updater(prev) : { ...prev, ...updater }
+    );
   };
 
   const handleLandmarkMeasure = async () => {
@@ -1995,6 +2193,8 @@ const jumpToStep = (step) => {
   };
 
   const handleSaveCustomer = async () => {
+    const previousSaveState = saveState;
+
     setSaveState((prev) => ({
       status: "loading",
       error: "",
@@ -2004,6 +2204,7 @@ const jumpToStep = (step) => {
     }));
     setRecommendState({ status: "idle", error: "", result: null });
     setHairRecommendState({ status: "idle", error: "", result: null });
+    setFormattedReportState({ status: "idle", error: "", result: null });
     try {
       const measurementResult = calculateFaceMeasurements(data.measurements || {});
       const thirdsRatio = measurementResult.upperPct
@@ -2025,8 +2226,8 @@ const jumpToStep = (step) => {
 
       const payload = {
         action: "saveCustomer",
-        rowNumber: saveState?.rowNumber || "",
-        customerId: saveState?.customerId || "",
+        rowNumber: previousSaveState?.rowNumber || "",
+        customerId: previousSaveState?.customerId || "",
         data: {
           name: data.clientName || "未命名個案",
           date: new Date().toISOString().slice(0, 10),
@@ -2057,7 +2258,13 @@ const jumpToStep = (step) => {
         },
       };
       const result = await postJson(payload);
-      setSaveState({ status: "success", error: "", rowNumber: result?.rowNumber, customerId: result?.customerId || "", mode: result?.mode || "created" });
+      setSaveState({
+        status: "success",
+        error: "",
+        rowNumber: result?.rowNumber || previousSaveState?.rowNumber || null,
+        customerId: result?.customerId || previousSaveState?.customerId || "",
+        mode: result?.mode || previousSaveState?.mode || (previousSaveState?.rowNumber ? "updated" : "created"),
+      });
     } catch (error) {
       setSaveState((prev) => ({
         status: "error",
@@ -2091,6 +2298,28 @@ const jumpToStep = (step) => {
     }
   };
 
+  const handleGenerateFormattedReport = async () => {
+    if (!saveState.rowNumber) return;
+
+    setFormattedReportState({ status: "loading", error: "", result: null });
+
+    try {
+      const result = await postJson({
+        action: "generateFormattedReport",
+        row: saveState.rowNumber,
+        provider: data.aiProvider || "gemini",
+      });
+
+      setFormattedReportState({ status: "success", error: "", result });
+    } catch (error) {
+      setFormattedReportState({
+        status: "error",
+        error: formatClientError(error),
+        result: null,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-stone-50 p-4 pb-28 font-sans text-stone-900 md:p-8 selection:bg-rose-500 selection:text-white">
       <div className="mx-auto max-w-7xl">
@@ -2099,6 +2328,8 @@ const jumpToStep = (step) => {
   setCurrent={jumpToStep}
   data={data}
   recommendState={recommendState}
+  hairRecommendState={hairRecommendState}
+  formattedReportState={formattedReportState}
 />
         <div className="mb-6 flex justify-end">
   <button
@@ -2119,7 +2350,7 @@ const jumpToStep = (step) => {
 
         <div className="grid min-w-0 gap-8 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="hidden min-w-0 space-y-6 lg:sticky lg:top-6 lg:block lg:h-[calc(100vh-3rem)] lg:overflow-y-auto">
-            <StickyPhotoSummaryPanel data={data} setData={setData} options={options} apiStates={apiStates} saveState={saveState} onSaveCustomer={handleSaveCustomer} setCurrent={jumpToStep} aiState={aiState} />
+            <StickyPhotoSummaryPanel data={data} setData={updateDataAndMarkEdited} options={options} apiStates={apiStates} saveState={saveState} onSaveCustomer={handleSaveCustomer} setCurrent={jumpToStep} aiState={aiState} />
           </aside>
 
           <main className="min-w-0 overflow-hidden rounded-[2rem] border border-stone-100 bg-white p-4 shadow-2xl shadow-stone-200/60 sm:p-6 md:p-8 xl:p-10">
@@ -2139,8 +2370,8 @@ const jumpToStep = (step) => {
   <StepNavigator current={current} jumpToStep={jumpToStep} />
 </div>
 
-{current === 0 && <SetupPanel data={data} setData={setData} />}
-            {current === 1 && <BasicPanel data={data} setData={setData} options={options} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} setCurrent={jumpToStep} />}
+{current === 0 && <SetupPanel data={data} setData={updateSetupData} />}
+            {current === 1 && <BasicPanel data={data} setData={updateDataAndMarkEdited} options={options} aiState={aiState} onAIAnalyze={handleAIAnalyze} onSyncAll={handleSyncAll} apiStates={apiStates} landmarkState={landmarkState} onLandmarkMeasure={handleLandmarkMeasure} setCurrent={jumpToStep} />}
             {current === 2 && (
               <AnalysisPanel title="臉型分析 FS" description="判斷臉部輪廓與骨架感。" label="選擇臉型" options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} apiState={apiStates.face} onReload={() => reloadOptionGroup("face")} selectorOverride={<FaceShapeGrid options={options.face} value={data.face} onChange={(val) => handleMainChange("face", val)} loading={apiStates.face.status === "loading" && options.face.length === 0} />}>
                 <div className="rounded-3xl border border-amber-100 bg-amber-50/60 p-5 text-sm leading-7 text-stone-700">
@@ -2164,7 +2395,7 @@ const jumpToStep = (step) => {
                   </div>
                 </div>
 
-                <GroupedCheckboxTagGroup title={observationTagGroups.faceDetailTags.title} hint={observationTagGroups.faceDetailTags.hint} sections={faceDetailTagSections} value={data.faceDetailTags || []} onChange={(next) => handleMainChange("faceDetailTags", next)} />
+                                <GroupedCheckboxTagGroup title={observationTagGroups.faceDetailTags.title} hint={observationTagGroups.faceDetailTags.hint} sections={faceDetailTagSections} value={data.faceDetailTags || []} onChange={(next) => handleMainChange("faceDetailTags", next)} />
               </AnalysisPanel>
             )}
             {current === 3 && (
@@ -2209,9 +2440,33 @@ const jumpToStep = (step) => {
                 <SingleSelectTagGroup title="色彩整合補充" groups={colorSeasonGroups} value={data.colorSeason || ""} onChange={(next) => handleMainChange("colorSeason", next)} />
                 <CheckboxTagGroup title={observationTagGroups.styleSupplementTags.title} hint={observationTagGroups.styleSupplementTags.hint} options={observationTagGroups.styleSupplementTags.options} value={data.styleSupplementTags || []} onChange={(next) => handleMainChange("styleSupplementTags", next.slice(-1))} />
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"><Field label="風格／色彩額外補充" hint="放與風格、色彩、整體氣質相關的補充，不放純結構觀察。"><textarea style={{ fontSize: 16 }} value={data.styleExtraNote || ""} onChange={(e) => handleMainChange("styleExtraNote", e.target.value)} className="min-h-28 w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：可保留 Fresh 感，但妝感不宜過透明。" /></Field></div>
+                <div className="rounded-3xl border border-rose-100 bg-rose-50/50 p-5 text-center">
+                  <div className="mb-3 text-sm font-semibold text-stone-900">
+                    風格分析完成後，請進入建議輸出
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => jumpToStep(8)}
+                    className="rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-white shadow-sm"
+                  >
+                    前往建議輸出
+                  </button>
+                </div>
               </AnalysisPanel>
             )}
-            {current === 8 && <RecommendPanel data={data} options={options} saveState={saveState} recommendState={recommendState} hairRecommendState={hairRecommendState} onGenerateRecommendation={handleGenerateRecommendation} onGenerateHairRecommendation={handleGenerateHairRecommendation} />}
+            {current === 8 && (
+  <RecommendPanel
+    data={data}
+    options={options}
+    saveState={saveState}
+    recommendState={recommendState}
+    hairRecommendState={hairRecommendState}
+    formattedReportState={formattedReportState}
+    onGenerateRecommendation={handleGenerateRecommendation}
+    onGenerateHairRecommendation={handleGenerateHairRecommendation}
+    onGenerateFormattedReport={handleGenerateFormattedReport}
+  />
+)}
 
             <div className="mt-10 hidden border-t border-stone-100 pt-8 md:block"><StepNavigator current={current} jumpToStep={jumpToStep} /></div>
           </main>
