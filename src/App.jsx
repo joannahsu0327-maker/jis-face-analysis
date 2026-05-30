@@ -2135,10 +2135,14 @@ const jumpToStep = (step) => {
   };
 
   const updateSetupData = (updater) => {
-    setData((prev) =>
-      typeof updater === "function" ? updater(prev) : { ...prev, ...updater }
-    );
-  };
+  setData((prev) =>
+    typeof updater === "function" ? updater(prev) : { ...prev, ...updater }
+  );
+
+  if (saveState?.rowNumber) {
+    markCustomerEdited();
+  }
+};
 
   const handleLandmarkMeasure = async () => {
     if (!data.photo) return;
