@@ -1612,6 +1612,8 @@ function ConsultantReportCard({ report }) {
 
 function FormattedReportCard({ formattedReportState }) {
   const result = formattedReportState?.result;
+  const hairRecommendations = result?.hairRecommendations || [];
+  const altHairItems = hairRecommendations.slice(1, 3);
 
   const pages = result
     ? [
@@ -1716,12 +1718,80 @@ function FormattedReportCard({ formattedReportState }) {
                 {page.body || "尚未生成"}
               </div>
 
-              {page.isHair && result.page8_altOptions && (
-                <div className="mt-4 rounded-2xl bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-800">
-                  <div className="mb-1 text-xs font-semibold tracking-widest text-amber-500">替代方向</div>
-                  <div className="whitespace-pre-line">{result.page8_altOptions}</div>
+{page.isHair && (
+  <div className="mt-5 space-y-4">
+    <div className="text-xs font-semibold tracking-widest text-amber-500">
+      替代方向
+    </div>
+
+    {altHairItems.length > 0 ? (
+      altHairItems.map((item, index) => {
+        const imageUrl = getHairImageUrl(item);
+
+        return (
+          <div
+            key={`${item.hairId || index}-${item.bangId || ""}-${item.partId || ""}`}
+            className="rounded-3xl bg-amber-50/70 p-4 text-amber-900"
+          >
+            <div className="mb-3 text-sm font-semibold">
+              TOP {index + 2}｜替代方向
+            </div>
+
+            {imageUrl && (
+              <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-white bg-white shadow-sm">
+                <img
+                  src={imageUrl}
+                  alt={`${item.hair || "髮型"}＋${item.bang || "瀏海"}＋${item.part || "分線"}`}
+                  className="aspect-[4/5] w-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    const parent = e.currentTarget.closest("div");
+                    if (parent) parent.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="grid gap-2 md:grid-cols-3">
+              <div className="rounded-2xl bg-white/70 px-4 py-3">
+                <div className="text-xs text-amber-500">髮型</div>
+                <div className="mt-1 text-sm font-semibold text-stone-800">
+                  {item.hair || "未填"}
                 </div>
-              )}
+              </div>
+
+              <div className="rounded-2xl bg-white/70 px-4 py-3">
+                <div className="text-xs text-amber-500">瀏海</div>
+                <div className="mt-1 text-sm font-semibold text-stone-800">
+                  {item.bang || "未填"}
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white/70 px-4 py-3">
+                <div className="text-xs text-amber-500">分線</div>
+                <div className="mt-1 text-sm font-semibold text-stone-800">
+                  {item.part || "未填"}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 whitespace-pre-line text-sm leading-7 text-stone-700">
+              {item.reason || item.reportText || "此方向可作為備選髮型參考。"}
+            </div>
+          </div>
+        );
+      })
+    ) : result.page8_altOptions ? (
+      <div className="rounded-2xl bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-800">
+        <div className="whitespace-pre-line">{result.page8_altOptions}</div>
+      </div>
+    ) : (
+      <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-400">
+        尚未產生替代方向。
+      </div>
+    )}
+  </div>
+)}
             </div>
           ))}
         </div>
