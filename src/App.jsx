@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  **************************************************/
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbyuZUGv7dahcl2KHhaqRRXYcSMH5PpP543S_yMUq72pe9jKlXIU_8YusOuqsNDUG6LElg/exec";
+  "https://script.google.com/macros/s/AKfycbxzeqC-PTs22m9f4FLOdiYeQw4UGrpCGSi3kluwzS2Yg6CaEvO91wm99URp1Y90iH8zCg/exec";
 
 const STYLE_MAP_IMAGE_URL =
   "https://drive.google.com/thumbnail?id=1qJ-qTIeGXjYeh3IFW8qecjQ79GP1POIk&sz=w1600";
@@ -67,8 +67,8 @@ async function getFaceLandmarker() {
   if (faceLandmarkerInstance) return faceLandmarkerInstance;
 
   const loaded = await loadMediapipe();
-const vision = await loaded.FilesetResolver.forVisionTasks(
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
+  const vision = await loaded.FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
   );
 
   try {
@@ -144,6 +144,10 @@ function loadImageFromBase64(src) {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+function getPhotoSrc(data) {
+  return data?.photo || data?.photoUrl || "";
 }
 
 function compressImageFile(file, maxSize = 1200, quality = 0.78) {
@@ -922,7 +926,7 @@ function ProgressRail({ current, setCurrent, data, recommendState, hairRecommend
   const isStepCompleted = (stepId) => {
     switch (stepId) {
       case "setup":
-        return Boolean(data?.clientName || data?.photo);
+        return Boolean(data?.clientName || data?.photo || data?.photoUrl);
 
       case "ai":
         return Boolean(
@@ -1105,6 +1109,7 @@ function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer
 
   const faceName = getName(options.face, data.face) || "未選臉型";
   const styleName = getName(options.style, data.style) || "未選風格";
+  const photoSrc = getPhotoSrc(data);
 
   return (
     <div className="mb-5 rounded-[1.5rem] border border-stone-200 bg-white p-3 shadow-sm lg:hidden">
@@ -1114,8 +1119,8 @@ function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer
         className="flex w-full items-center gap-3 text-left"
       >
         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-stone-100">
-          {data.photo ? (
-            <img src={data.photo} alt="個案縮圖" className="h-full w-full object-cover" />
+          {photoSrc ? (
+            <img src={photoSrc} alt="個案縮圖" className="h-full w-full object-cover" />
           ) : (
             <span className="text-xl">📷</span>
           )}
@@ -1149,9 +1154,9 @@ function MobileCollapsibleSummaryCard({ data, options, saveState, onSaveCustomer
         <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
             <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-stone-50">
       <div className="aspect-[3/4] w-full">
-        {data.photo ? (
+        {photoSrc ? (
           <img
-            src={data.photo}
+            src={photoSrc}
             alt="展開照片預覽"
             className="h-full w-full object-cover"
           />
@@ -1249,6 +1254,7 @@ function StepNavigator({ current, jumpToStep }) {
 
 function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState, onSaveCustomer, setCurrent, aiState }) {
   const fileInputRef = useRef(null);
+  const photoSrc = getPhotoSrc(data);
   const connectedCount = Object.values(apiStates || {}).filter((state) => state.status === "success").length;
   const summaryRows = [
     { key: "face", label: "臉型", value: getName(options.face, data.face), code: data.face, targetStep: 2 },
@@ -1266,10 +1272,29 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
 
     try {
       const compressedPhoto = await compressImageFile(file);
-      setData((prev) => ({ ...prev, photo: compressedPhoto }));
+
+      const uploaded = await postJson({
+        action: "uploadCustomerPhoto",
+        imageBase64: compressedPhoto,
+        customerName: data.clientName || "未命名個案",
+      });
+
+      const photoUrl = uploaded?.thumbnailUrl || uploaded?.photoUrl || uploaded?.url || "";
+      const photoFileId = uploaded?.fileId || uploaded?.id || "";
+
+      if (!photoUrl && !photoFileId) {
+        throw new Error("照片已壓縮，但後端沒有回傳 photoUrl 或 fileId。");
+      }
+
+      setData((prev) => ({
+        ...prev,
+        photo: compressedPhoto,
+        photoUrl,
+        photoFileId,
+      }));
     } catch (error) {
-      window.alert("照片讀取失敗，請重新選擇一張照片。");
-      console.warn("照片壓縮或讀取失敗", error);
+      window.alert(`照片上傳失敗：${formatClientError(error)}\n\n請確認 Apps Script 已部署最新版，且 uploadCustomerPhoto 動作可用。`);
+      console.warn("照片壓縮或上傳失敗", error);
     }
   };
 
@@ -1319,11 +1344,11 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
               <div className="text-sm font-semibold text-stone-900">人像照片</div>
               <div className="mt-1 text-xs text-stone-400">上傳後會固定在左側方便比對</div>
             </div>
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-700 hover:bg-stone-50">{data.photo ? "更換照片" : "上傳照片"}</button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-700 hover:bg-stone-50">{photoSrc ? "更換照片" : "上傳照片"}</button>
           </div>
           <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
           <button type="button" onClick={() => fileInputRef.current?.click()} className="mx-auto flex aspect-[3/4] w-full max-w-[320px] items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-3 text-center transition hover:border-stone-400 hover:bg-stone-100">
-            {data.photo ? <img src={data.photo} alt="個案照片" className="h-full w-full rounded-2xl object-contain" /> : <div><div className="text-2xl">📷</div><div className="mt-2 text-sm font-medium text-stone-700">先上傳正面照</div><div className="mt-1 text-xs text-stone-400">照片會固定在左側方便比對</div></div>}
+            {photoSrc ? <img src={photoSrc} alt="個案照片" className="h-full w-full rounded-2xl object-contain" /> : <div><div className="text-2xl">📷</div><div className="mt-2 text-sm font-medium text-stone-700">先上傳正面照</div><div className="mt-1 text-xs text-stone-400">照片會固定在左側方便比對</div></div>}
           </button>
         </div>
 
@@ -1348,6 +1373,7 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
 
 function SetupPanel({ data, setData }) {
   const fileInputRef = useRef(null);
+  const photoSrc = getPhotoSrc(data);
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
@@ -1355,10 +1381,29 @@ function SetupPanel({ data, setData }) {
 
     try {
       const compressedPhoto = await compressImageFile(file);
-      setData((prev) => ({ ...prev, photo: compressedPhoto }));
+
+      const uploaded = await postJson({
+        action: "uploadCustomerPhoto",
+        imageBase64: compressedPhoto,
+        customerName: data.clientName || "未命名個案",
+      });
+
+      const photoUrl = uploaded?.thumbnailUrl || uploaded?.photoUrl || uploaded?.url || "";
+      const photoFileId = uploaded?.fileId || uploaded?.id || "";
+
+      if (!photoUrl && !photoFileId) {
+        throw new Error("照片已壓縮，但後端沒有回傳 photoUrl 或 fileId。");
+      }
+
+      setData((prev) => ({
+        ...prev,
+        photo: compressedPhoto,
+        photoUrl,
+        photoFileId,
+      }));
     } catch (error) {
-      window.alert("照片讀取失敗，請重新選擇一張照片。");
-      console.warn("照片壓縮或讀取失敗", error);
+      window.alert(`照片上傳失敗：${formatClientError(error)}\n\n請確認 Apps Script 已部署最新版，且 uploadCustomerPhoto 動作可用。`);
+      console.warn("照片壓縮或上傳失敗", error);
     }
   };
 
@@ -1405,12 +1450,12 @@ function SetupPanel({ data, setData }) {
               <div className="mt-1 text-xs text-stone-400">建立個案時先上傳正面照</div>
             </div>
             <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs text-stone-700 hover:bg-stone-50">
-              {data.photo ? "更換照片" : "上傳照片"}
+              {photoSrc ? "更換照片" : "上傳照片"}
             </button>
           </div>
           <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
           <button type="button" onClick={() => fileInputRef.current?.click()} className="mx-auto flex aspect-[3/4] w-full max-w-[280px] items-center justify-center overflow-hidden rounded-3xl border border-dashed border-stone-300 bg-stone-50 p-3 text-center transition hover:border-stone-400 hover:bg-stone-100">
-            {data.photo ? <img src={data.photo} alt="個案照片" className="h-full w-full rounded-2xl object-contain" /> : <div><div className="text-2xl">📷</div><div className="mt-2 text-sm font-medium text-stone-700">先上傳正面照</div><div className="mt-1 text-xs text-stone-400">照片會同步顯示在左側摘要</div></div>}
+            {photoSrc ? <img src={photoSrc} alt="個案照片" className="h-full w-full rounded-2xl object-contain" /> : <div><div className="text-2xl">📷</div><div className="mt-2 text-sm font-medium text-stone-700">先上傳正面照</div><div className="mt-1 text-xs text-stone-400">照片會同步顯示在左側摘要</div></div>}
           </button>
         </div>
       </div>
@@ -1473,7 +1518,7 @@ function BasicPanel({ data, setData, options, aiState, onAIAnalyze, onSyncAll, a
           <div className="mt-2 text-xs leading-5 text-stone-500">Gemini 為目前穩定預設；OpenAI 可用來做同張照片比較判讀。</div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" disabled={!data.photo || aiState.status === "loading"} onClick={onAIAnalyze} className="rounded-full bg-stone-900 px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-30">{aiState.status === "loading" ? "AI 分析中…" : "AI 初判臉型／比例／直曲／量感／風格／年齡感"}</button>
+          <button type="button" disabled={!getPhotoSrc(data) || aiState.status === "loading"} onClick={onAIAnalyze} className="rounded-full bg-stone-900 px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-30">{aiState.status === "loading" ? "AI 分析中…" : "AI 初判臉型／比例／直曲／量感／風格／年齡感"}</button>
           <button type="button" disabled={!data.photo || landmarkState.status === "loading"} onClick={onLandmarkMeasure} className="rounded-full border border-stone-200 bg-white px-5 py-2 text-sm text-stone-700 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-30">{landmarkState.status === "loading" ? "點位偵測中…" : "點位偵測三庭比例"}</button>
         </div>
         {aiState.error && <div className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">{aiState.error}</div>}
@@ -2083,7 +2128,9 @@ function saveDraftToStorage(draft) {
     ...draft,
     data: {
       ...(draft?.data || {}),
-      photo: draft?.data?.photo || null,
+      photo: null,
+      photoUrl: draft?.data?.photoUrl || "",
+      photoFileId: draft?.data?.photoFileId || "",
     },
   };
 
@@ -2096,6 +2143,8 @@ function saveDraftToStorage(draft) {
         data: {
           ...(safeDraft?.data || {}),
           photo: null,
+          photoUrl: safeDraft?.data?.photoUrl || "",
+          photoFileId: safeDraft?.data?.photoFileId || "",
         },
       };
       window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftWithoutPhoto));
@@ -2124,7 +2173,12 @@ export default function App() {
   const [options, setOptions] = useState(fallbackOptions);
   const [apiStates, setApiStates] = useState({ face: { status: "idle", error: "" }, ratio: { status: "idle", error: "" }, line: { status: "idle", error: "" }, volume: { status: "idle", error: "" }, style: { status: "idle", error: "" }, age: { status: "idle", error: "" } });
 const defaultData = {
-  clientName: "", need: "完整形象報告", photo: null, aiProvider: "gemini",
+  clientName: "",
+  need: "完整形象報告",
+  photo: null,
+  photoUrl: "",
+  photoFileId: "",
+  aiProvider: "gemini",
   measurements: { faceLength: "", faceWidth: "", upperThird: "", middleThird: "", lowerThird: "" },
   eyeObservation: "", extraObservation: "", styleExtraNote: "", colorSeason: "",
   ageAssessment: {}, lineAssessment: {},
@@ -2242,7 +2296,13 @@ const jumpToStep = (step) => {
 };
 
   const handleLandmarkMeasure = async () => {
-    if (!data.photo) return;
+    if (!data.photo) {
+      setLandmarkState({
+        status: "error",
+        error: "目前只有雲端照片網址，點位偵測需要本次上傳的原始照片。請重新選擇照片後再偵測，或改用人工量測。",
+      });
+      return;
+    }
     setLandmarkState({ status: "loading", error: "" });
     try {
       const img = await loadImageFromBase64(data.photo);
@@ -2272,10 +2332,15 @@ const jumpToStep = (step) => {
   };
 
   const handleAIAnalyze = async () => {
-    if (!data.photo) return;
+    if (!data.photo && !data.photoUrl) return;
     setAiState({ status: "loading", error: "", result: null, mapped: null });
     try {
-      const result = await postJson({ action: "aiAnalyzeFace", imageBase64: data.photo, provider: data.aiProvider || "gemini" });
+      const result = await postJson({
+        action: "aiAnalyzeFace",
+        imageBase64: data.photo || "",
+        imageUrl: data.photoUrl || "",
+        provider: data.aiProvider || "gemini",
+      });
       const mapped = mapAIResultToCodes(result);
       setData((prev) => ({
         ...prev,
@@ -2332,6 +2397,8 @@ const jumpToStep = (step) => {
         data: {
           name: data.clientName || "未命名個案",
           date: new Date().toISOString().slice(0, 10),
+          photoUrl: data.photoUrl || "",
+          photoFileId: data.photoFileId || "",
           faceName: getName(options.face, data.face), faceCode: data.face,
           ratioName: getName(options.ratio, data.ratio), ratioCode: data.ratio,
           lineName: getName(options.line, data.line), lineCode: data.line,
