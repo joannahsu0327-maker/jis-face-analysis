@@ -926,8 +926,8 @@ function ApiNotice({ apiState }) {
 function ProgressRail({ current, setCurrent, data, recommendState, hairRecommendState, formattedReportState }) {
   const isStepCompleted = (stepId) => {
     switch (stepId) {
-      case "setup":
-        return Boolean(data?.clientName || data?.photo);
+case "setup":
+  return Boolean(data?.clientName || data?.photo || data?.photoUrl);
 
       case "ai":
         return Boolean(
