@@ -74,8 +74,7 @@ async function getFaceLandmarker() {
   try {
     faceLandmarkerInstance = await loaded.FaceLandmarker.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
+        modelAssetPath: "/models/face_landmarker.task",
         delegate: "CPU",
       },
       runningMode: "IMAGE",
