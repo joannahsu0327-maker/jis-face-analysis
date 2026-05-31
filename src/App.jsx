@@ -67,8 +67,8 @@ async function getFaceLandmarker() {
   if (faceLandmarkerInstance) return faceLandmarkerInstance;
 
   const loaded = await loadMediapipe();
-  const vision = await loaded.FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm"
+const vision = await loaded.FilesetResolver.forVisionTasks(
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
   );
 
   try {
