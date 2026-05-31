@@ -83,7 +83,7 @@ async function getFaceLandmarker() {
     });
   } catch (error) {
     faceLandmarkerInstance = null;
-    throw new Error("MediaPipe 點位模型載入失敗，請重新整理頁面後再試；若仍失敗，請改用正式 Vercel 網站測試。");
+    throw new Error("點位偵測暫時無法使用，請改用下方人工量測輸入臉長、臉寬與三庭比例。其他 AI 初判與報告輸出不受影響。");
   }
 
   return faceLandmarkerInstance;
