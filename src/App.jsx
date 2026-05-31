@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  **************************************************/
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbzNYsYm2_zzfpHSay8cQQNPZoN_BpbwadpcC4G7kA0v9TOVzabpxVqDllhAS-X8rXqViA/exec";
+  "https://script.google.com/macros/s/AKfycbw8LK2UB357Lh2uaOnwzFrL3c8ab91WcM09nv7x_-rIcBaR9ZLBfp2kRwDnDidpkLsZYQ/exec";
 
 const STYLE_MAP_IMAGE_URL =
   "https://drive.google.com/thumbnail?id=1qJ-qTIeGXjYeh3IFW8qecjQ79GP1POIk&sz=w1600";
@@ -1037,7 +1037,7 @@ function isAIMatched(aiState, key, value) {
   return aiState?.status === "success" && aiState?.mapped?.[key] && aiState.mapped[key] === value;
 }
 
-function SummaryValueBadge({ label, value, code, aiMatched }) {
+function SummaryValueBadge({ value, code, aiMatched }) {
   return (
     <span
       className={cx(
@@ -1614,62 +1614,51 @@ function ConsultantReportCard({ report }) {
 function FormattedReportCard({ formattedReportState }) {
   const result = formattedReportState?.result;
 
-  const sections = [
-    ["01｜年齡感定位", result?.agePage],
-    ["02｜直曲線定位", result?.linePage],
-    ["03｜臉型分析", result?.facePage],
-    ["04｜三庭五眼比例分析", result?.ratioPage],
-    ["05｜五官整體風格", result?.stylePage],
-    ["06｜妝容建議", result?.makeupPage],
-    ["07｜髮長與瀏海建議", result?.hairPage],
-    ["08｜耳環建議", result?.earringsPage],
-  ];
-
-  const reportText = sections
-    .map(([title, content]) => `${title}\n${content || ""}`)
-    .join("\n\n");
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(reportText);
-      window.alert("已複製正式報告格式。");
-    } catch (error) {
-      window.alert("複製失敗，請手動選取文字複製。");
-    }
-  };
+  const pages = result
+    ? [
+        { key: "page1", title: result.page1_title || "個人顏分析報告", body: [result.page1_subtitle, `姓名：${result.page1_clientName || ""}`, `日期：${result.page1_date || ""}`, `顧問：${result.page1_advisor || "Joanna"}`].filter(Boolean).join("\n") },
+        { key: "page2", title: result.page2_title || "01｜年齡感定位", body: result.page2_body || "" },
+        { key: "page3", title: result.page3_title || "02｜直曲線定位", body: result.page3_body || "" },
+        { key: "page4", title: result.page4_title || "03｜臉型分析", body: result.page4_body || "" },
+        { key: "page5", title: result.page5_title || "04｜比例分析", body: result.page5_body || "" },
+        { key: "page6", title: result.page6_title || "05｜風格定位", body: result.page6_body || "" },
+        { key: "page7", title: result.page7_title || "06｜妝容建議", body: result.page7_body || "" },
+        { key: "page8", title: result.page8_title || "07｜髮型建議", body: result.page8_body || "", isHair: true },
+        { key: "page9", title: result.page9_title || "08｜耳環建議", body: result.page9_body || "" },
+        { key: "page10", title: result.page10_title || "09｜眼鏡建議", body: result.page10_body || "" },
+        { key: "page11", title: result.page11_title || "10｜整體總結", body: result.page11_body || "" },
+        { key: "page12", title: result.page12_title || "11｜結尾", body: result.page12_body || "" },
+      ]
+    : [];
 
   return (
     <div className="rounded-3xl border border-amber-100 bg-amber-50/40 p-5">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="text-sm font-semibold text-stone-900">
-            正式客戶報告預覽
+            客戶完整報告預覽
           </div>
           <div className="mt-1 text-xs leading-5 text-stone-500">
-            依照 Joanna 原本顏分析報告書格式：年齡感、直曲、臉型、比例、風格、妝容、髮型、耳環。
+            同一份內容可用於網頁檢查，之後再套入 Canva 固定格式。髮型頁有圖優先顯示，沒有圖也會保留文字。
           </div>
         </div>
 
         {result && (
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="rounded-full bg-stone-900 px-4 py-2 text-sm text-white shadow-sm"
-          >
-            複製正式報告
-          </button>
+          <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-amber-700 ring-1 ring-amber-100">
+            已生成 12 頁
+          </span>
         )}
       </div>
 
       {formattedReportState?.status === "idle" && (
         <div className="rounded-2xl bg-white px-4 py-3 text-sm text-stone-400">
-          尚未生成正式報告格式。
+          尚未生成客戶完整報告。
         </div>
       )}
 
       {formattedReportState?.status === "loading" && (
         <div className="rounded-2xl bg-white px-4 py-3 text-sm text-stone-500">
-          正式報告生成中…
+          客戶完整報告生成中…
         </div>
       )}
 
@@ -1681,14 +1670,59 @@ function FormattedReportCard({ formattedReportState }) {
 
       {result && (
         <div className="space-y-4">
-          {sections.map(([title, content]) => (
-            <div key={title} className="rounded-3xl bg-white p-5 shadow-sm">
-              <div className="mb-2 text-sm font-semibold text-stone-900">
-                {title}
+          {pages.map((page) => (
+            <div key={page.key} className="rounded-3xl bg-white p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-stone-900">
+                  {page.title}
+                </div>
+                <div className="rounded-full bg-stone-50 px-3 py-1 text-[11px] font-medium text-stone-400">
+                  {page.key.replace("page", "Page ")}
+                </div>
               </div>
+
+              {page.isHair && result.page8_hairImage && (
+                <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-stone-100 bg-stone-50 shadow-sm">
+                  <img
+                    src={result.page8_hairImage}
+                    alt={`${result.page8_hairName || "髮型"}＋${result.page8_bangName || "瀏海"}＋${result.page8_partName || "分線"}`}
+                    className="aspect-[4/5] w-full object-cover md:max-h-[520px]"
+                    loading="lazy"
+                    onError={(e) => {
+                      const parent = e.currentTarget.closest("div");
+                      if (parent) parent.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+
+              {page.isHair && (
+                <div className="mb-3 grid gap-2 md:grid-cols-3">
+                  <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                    <div className="text-xs text-stone-400">髮型</div>
+                    <div className="mt-1 text-sm font-semibold text-stone-800">{result.page8_hairName || "未填"}</div>
+                  </div>
+                  <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                    <div className="text-xs text-stone-400">瀏海</div>
+                    <div className="mt-1 text-sm font-semibold text-stone-800">{result.page8_bangName || "未填"}</div>
+                  </div>
+                  <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                    <div className="text-xs text-stone-400">分線</div>
+                    <div className="mt-1 text-sm font-semibold text-stone-800">{result.page8_partName || "未填"}</div>
+                  </div>
+                </div>
+              )}
+
               <div className="whitespace-pre-line text-sm leading-7 text-stone-700">
-                {content || "尚未生成"}
+                {page.body || "尚未生成"}
               </div>
+
+              {page.isHair && result.page8_altOptions && (
+                <div className="mt-4 rounded-2xl bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-800">
+                  <div className="mb-1 text-xs font-semibold tracking-widest text-amber-500">替代方向</div>
+                  <div className="whitespace-pre-line">{result.page8_altOptions}</div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -1885,15 +1919,9 @@ function RecommendPanel({
   data,
   options,
   saveState,
-  recommendState,
-  hairRecommendState,
   formattedReportState,
-  onGenerateRecommendation,
-  onGenerateHairRecommendation,
   onGenerateFormattedReport,
 }) {
-  const report = useMemo(() => buildConsultantReport(data, options, recommendState?.result), [data, options, recommendState?.result]);
-  const directionNotes = useMemo(() => buildDirectionNotes(data, options), [data, options]);
   const summary = [
     `臉型：${getName(options.face, data.face)}`,
     `比例：${getName(options.ratio, data.ratio)}`,
@@ -1902,65 +1930,51 @@ function RecommendPanel({
     `風格：${getName(options.style, data.style)}`,
     `年齡感：${getName(options.age, data.age)}`,
   ];
+
   return (
     <section className="space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div><h2 className="text-2xl font-semibold text-stone-900">建議輸出</h2><p className="mt-2 text-stone-500">先儲存個案，再生成整體建議與髮型推薦。</p></div>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={onGenerateHairRecommendation} disabled={!saveState?.rowNumber || hairRecommendState?.status === "loading"} className="rounded-full border border-stone-200 bg-white px-5 py-2 text-sm text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">{hairRecommendState?.status === "loading" ? "髮型計算中…" : "生成髮型推薦"}</button>
-          <button onClick={onGenerateFormattedReport} disabled={!saveState?.rowNumber || formattedReportState?.status === "loading"} className="rounded-full border border-amber-200 bg-amber-50 px-5 py-2 text-sm text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40">{formattedReportState?.status === "loading" ? "正式報告生成中…" : "生成正式報告格式"}</button>
-          <button onClick={onGenerateRecommendation} disabled={!saveState?.rowNumber || recommendState?.status === "loading"} className="rounded-full bg-stone-900 px-5 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40">{recommendState?.status === "loading" ? "生成中…" : "生成整體建議"}</button>
+        <div>
+          <h2 className="text-2xl font-semibold text-stone-900">建議輸出</h2>
+          <p className="mt-2 text-stone-500">
+            儲存個案後，一鍵生成客戶完整報告。髮型推薦會自動整合進第 8 頁。
+          </p>
         </div>
+
+        <button
+          type="button"
+          onClick={onGenerateFormattedReport}
+          disabled={!saveState?.rowNumber || formattedReportState?.status === "loading"}
+          className="rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {formattedReportState?.status === "loading" ? "完整報告生成中…" : "生成客戶完整報告"}
+        </button>
       </header>
+
       {!saveState?.rowNumber && (
         <div className="rounded-[2rem] border border-rose-100 bg-rose-50/70 p-6 shadow-sm">
           <div className="mb-3 text-lg font-semibold text-rose-800">尚未完成輸出前置條件</div>
-          <div className="grid gap-3 md:grid-cols-2"><div className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-rose-700">✕ 尚未儲存個案到 01</div><div className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-rose-700">✕ 尚未生成建議</div></div>
-          <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm leading-6 text-stone-700">請先按左側「照片與判斷摘要」裡的「儲存個案到 01」，完成後才能生成整體建議與髮型推薦。</div>
+          <div className="rounded-2xl bg-white px-4 py-3 text-sm font-medium text-rose-700">
+            ✕ 尚未儲存個案到 01
+          </div>
+          <div className="mt-4 rounded-2xl bg-white/70 px-4 py-3 text-sm leading-6 text-stone-700">
+            請先按左側「照片與判斷摘要」裡的「儲存個案到 01」。儲存後才能生成客戶完整報告。
+          </div>
         </div>
       )}
-      {recommendState?.error && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{recommendState.error}</div>}
-      {recommendState?.status === "success" && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">已生成並寫入客戶分析資料表</div>}
-      <div className="rounded-3xl border border-stone-200 bg-white p-5"><div className="mb-4 text-sm font-semibold text-stone-800">分析摘要</div><div className="grid gap-3 md:grid-cols-2">{summary.map((item) => <div key={item} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-700">{item}</div>)}</div></div>
+
       <div className="rounded-3xl border border-stone-200 bg-white p-5">
-        <div className="mb-4">
-          <div className="text-sm font-semibold text-stone-800">觀察與修飾標籤</div>
-          <div className="mt-1 text-xs leading-5 text-stone-500">此區會顯示比例重心、五官結構與修飾目標三組標籤。</div>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <div className="mb-2 text-xs font-semibold tracking-widest text-stone-400">比例與重心</div>
-            <div className="flex flex-wrap gap-2">
-              {(data.ratioFocusTags || []).length ? data.ratioFocusTags.map((tag) => <span key={tag} className="rounded-full bg-rose-50 px-4 py-2 text-sm text-rose-700">{tag}</span>) : <div className="text-sm text-stone-400">尚未選擇比例與重心標籤</div>}
+        <div className="mb-4 text-sm font-semibold text-stone-800">目前分析摘要</div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {summary.map((item) => (
+            <div key={item} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-700">
+              {item}
             </div>
-          </div>
-          <div>
-            <div className="mb-2 text-xs font-semibold tracking-widest text-stone-400">五官結構</div>
-            <div className="flex flex-wrap gap-2">
-              {(data.featureStructureTags || []).length ? data.featureStructureTags.map((tag) => <span key={tag} className="rounded-full bg-rose-50 px-4 py-2 text-sm text-rose-700">{tag}</span>) : <div className="text-sm text-stone-400">尚未選擇五官結構標籤</div>}
-            </div>
-          </div>
-          <div>
-            <div className="mb-2 text-xs font-semibold tracking-widest text-stone-400">修飾目標</div>
-            <div className="flex flex-wrap gap-2">
-              {(data.correctionGoalTags || []).length ? data.correctionGoalTags.map((tag) => <span key={tag} className="rounded-full bg-rose-50 px-4 py-2 text-sm text-rose-700">{tag}</span>) : <div className="text-sm text-stone-400">尚未選擇修飾目標標籤</div>}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
-      <div className="rounded-3xl border border-stone-200 bg-white p-5"><div className="mb-4 text-sm font-semibold text-stone-800">修飾方向</div><div className="space-y-2">{directionNotes.map((note) => <div key={note} className="rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-700">{note}</div>)}</div></div>
-<HairRecommendationCard hairRecommendState={hairRecommendState} />
 
-<FormattedReportCard formattedReportState={formattedReportState} />
-
-<ClientReportCard
-  data={data}
-  options={options}
-  recommendState={recommendState}
-  hairRecommendState={hairRecommendState}
-/>
-
-<ConsultantReportCard report={report} />
+      <FormattedReportCard formattedReportState={formattedReportState} />
     </section>
   );
 }
@@ -2472,16 +2486,12 @@ const jumpToStep = (step) => {
                 </div>
               </AnalysisPanel>
             )}
-            {current === 8 && (
+ {current === 8 && (
   <RecommendPanel
     data={data}
     options={options}
     saveState={saveState}
-    recommendState={recommendState}
-    hairRecommendState={hairRecommendState}
     formattedReportState={formattedReportState}
-    onGenerateRecommendation={handleGenerateRecommendation}
-    onGenerateHairRecommendation={handleGenerateHairRecommendation}
     onGenerateFormattedReport={handleGenerateFormattedReport}
   />
 )}
