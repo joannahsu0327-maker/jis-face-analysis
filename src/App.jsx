@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
  **************************************************/
 
 const API_BASE_URL =
-  "https://script.google.com/macros/s/AKfycbxzeqC-PTs22m9f4FLOdiYeQw4UGrpCGSi3kluwzS2Yg6CaEvO91wm99URp1Y90iH8zCg/exec";
+  "https://script.google.com/macros/s/AKfycbw8LK2UB357Lh2uaOnwzFrL3c8ab91WcM09nv7x_-rIcBaR9ZLBfp2kRwDnDidpkLsZYQ/exec";
 
 const STYLE_MAP_IMAGE_URL =
   "https://drive.google.com/thumbnail?id=1qJ-qTIeGXjYeh3IFW8qecjQ79GP1POIk&sz=w1600";
@@ -74,7 +74,8 @@ async function getFaceLandmarker() {
   try {
     faceLandmarkerInstance = await loaded.FaceLandmarker.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath: "/models/face_landmarker.task",
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task",
         delegate: "CPU",
       },
       runningMode: "IMAGE",
@@ -82,7 +83,7 @@ async function getFaceLandmarker() {
     });
   } catch (error) {
     faceLandmarkerInstance = null;
-    throw new Error("點位偵測暫時無法使用，請改用下方人工量測輸入臉長、臉寬與三庭比例。其他 AI 初判與報告輸出不受影響。");
+    throw new Error("MediaPipe 點位模型載入失敗，請重新整理頁面後再試；若仍失敗，請改用正式 Vercel 網站測試。");
   }
 
   return faceLandmarkerInstance;
@@ -766,33 +767,33 @@ function BinaryAssessmentTable({ title, hint, items, leftTitle, rightTitle, left
   );
 }
 
+const FACE_GROUPS = [
+  { key: "all", label: "全部", hint: "FS01–FS14", codes: [] },
+  { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
+  { key: "ovalLong", label: "橢圓長型系", hint: "FS03–FS06", codes: ["FS03", "FS04", "FS05", "FS06"] },
+  { key: "square", label: "方型系", hint: "FS07–FS08 / FS14", codes: ["FS07", "FS08", "FS14"] },
+  { key: "diamond", label: "菱形臉", hint: "FS09–FS10", codes: ["FS09", "FS10"] },
+  { key: "triangle", label: "三角形臉", hint: "FS11–FS13", codes: ["FS11", "FS12", "FS13"] },
+];
+
+function getInitialFaceGroup(code) {
+  if (!code) return "round";
+
+  const matchedGroup = FACE_GROUPS.find(
+    (group) => group.key !== "all" && group.codes.includes(code)
+  );
+
+  return matchedGroup ? matchedGroup.key : "all";
+}
+
 function FaceShapeGrid({ options, value, onChange, loading }) {
-  const faceGroups = [
-    { key: "all", label: "全部", hint: "FS01–FS14", codes: [] },
-    { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
-    { key: "ovalLong", label: "橢圓長型系", hint: "FS03–FS06", codes: ["FS03", "FS04", "FS05", "FS06"] },
-    { key: "square", label: "方型系", hint: "FS07–FS08 / FS14", codes: ["FS07", "FS08", "FS14"] },
-    { key: "diamond", label: "菱形臉", hint: "FS09–FS10", codes: ["FS09", "FS10"] },
-    { key: "triangle", label: "三角形臉", hint: "FS11–FS13", codes: ["FS11", "FS12", "FS13"] },
-  ];
-
-  const getInitialGroup = (code) => {
-    if (!code) return "round";
-
-    const matchedGroup = faceGroups.find(
-      (group) => group.key !== "all" && group.codes.includes(code)
-    );
-
-    return matchedGroup ? matchedGroup.key : "all";
-  };
-
-  const [activeGroup, setActiveGroup] = useState(() => getInitialGroup(value));
+  const [activeGroup, setActiveGroup] = useState(() => getInitialFaceGroup(value));
 
   useEffect(() => {
     if (!value) return;
 
     setActiveGroup((currentGroup) => {
-      const currentGroupData = faceGroups.find((group) => group.key === currentGroup);
+      const currentGroupData = FACE_GROUPS.find((group) => group.key === currentGroup);
 
       if (
         currentGroup === "all" ||
@@ -801,11 +802,11 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
         return currentGroup;
       }
 
-      return getInitialGroup(value);
+      return getInitialFaceGroup(value);
     });
   }, [value]);
 
-  const currentGroup = faceGroups.find((group) => group.key === activeGroup) || faceGroups[0];
+  const currentGroup = FACE_GROUPS.find((group) => group.key === activeGroup) || FACE_GROUPS[0];
 
   const visibleOptions =
     activeGroup === "all"
@@ -830,7 +831,7 @@ function FaceShapeGrid({ options, value, onChange, loading }) {
       </div>
 
       <div className="mb-5 flex flex-wrap gap-2 overflow-x-auto pb-1 md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {faceGroups.map((group) => {
+        {FACE_GROUPS.map((group) => {
           const active = activeGroup === group.key;
 
           return (
@@ -926,7 +927,7 @@ function ProgressRail({ current, setCurrent, data, recommendState, hairRecommend
   const isStepCompleted = (stepId) => {
     switch (stepId) {
       case "setup":
-        return Boolean(data?.clientName || data?.photo || data?.photoUrl);
+        return Boolean(data?.clientName || data?.photo);
 
       case "ai":
         return Boolean(
@@ -1040,7 +1041,7 @@ function isAIMatched(aiState, key, value) {
   return aiState?.status === "success" && aiState?.mapped?.[key] && aiState.mapped[key] === value;
 }
 
-function SummaryValueBadge({ value, code, aiMatched }) {
+function SummaryValueBadge({ label, value, code, aiMatched }) {
   return (
     <span
       className={cx(
@@ -1273,28 +1274,49 @@ function StickyPhotoSummaryPanel({ data, setData, options, apiStates, saveState,
     try {
       const compressedPhoto = await compressImageFile(file);
 
-      const uploaded = await postJson({
-        action: "uploadCustomerPhoto",
-        imageBase64: compressedPhoto,
-        customerName: data.clientName || "未命名個案",
-      });
-
-      const photoUrl = uploaded?.thumbnailUrl || uploaded?.photoUrl || uploaded?.url || "";
-      const photoFileId = uploaded?.fileId || uploaded?.id || "";
-
-      if (!photoUrl && !photoFileId) {
-        throw new Error("照片已壓縮，但後端沒有回傳 photoUrl 或 fileId。");
-      }
-
+      // 先保留本機壓縮照片：即使 Drive 同步失敗，本次仍可預覽、AI 初判、點位偵測。
       setData((prev) => ({
         ...prev,
         photo: compressedPhoto,
-        photoUrl,
-        photoFileId,
       }));
+
+      try {
+        const uploaded = await postJson({
+          action: "uploadCustomerPhoto",
+          imageBase64: compressedPhoto,
+          customerName: data.clientName || "未命名個案",
+        });
+
+        const photoFileId = uploaded?.fileId || uploaded?.id || "";
+        const photoUrl =
+          uploaded?.thumbnailUrl ||
+          uploaded?.photoUrl ||
+          uploaded?.url ||
+          (photoFileId ? `https://drive.google.com/thumbnail?id=${photoFileId}&sz=w1200` : "");
+
+        if (!photoUrl && !photoFileId) {
+          throw new Error("照片已壓縮，但後端沒有回傳 photoUrl 或 fileId。");
+        }
+
+        setData((prev) => ({
+          ...prev,
+          photo: compressedPhoto,
+          photoUrl,
+          photoFileId,
+        }));
+      } catch (uploadError) {
+        window.alert(
+          `照片已暫時顯示，可用於本次 AI 初判與點位偵測，但雲端同步失敗：${formatClientError(uploadError)}
+
+請確認 Apps Script 已部署最新版，稍後可重新上傳照片。`
+        );
+        console.warn("照片雲端同步失敗，本機照片已保留", uploadError);
+      }
     } catch (error) {
-      window.alert(`照片上傳失敗：${formatClientError(error)}\n\n請確認 Apps Script 已部署最新版，且 uploadCustomerPhoto 動作可用。`);
-      console.warn("照片壓縮或上傳失敗", error);
+      window.alert(`照片讀取失敗：${formatClientError(error)}
+
+請重新選擇一張照片。`);
+      console.warn("照片壓縮或讀取失敗", error);
     }
   };
 
@@ -1382,28 +1404,49 @@ function SetupPanel({ data, setData }) {
     try {
       const compressedPhoto = await compressImageFile(file);
 
-      const uploaded = await postJson({
-        action: "uploadCustomerPhoto",
-        imageBase64: compressedPhoto,
-        customerName: data.clientName || "未命名個案",
-      });
-
-      const photoUrl = uploaded?.thumbnailUrl || uploaded?.photoUrl || uploaded?.url || "";
-      const photoFileId = uploaded?.fileId || uploaded?.id || "";
-
-      if (!photoUrl && !photoFileId) {
-        throw new Error("照片已壓縮，但後端沒有回傳 photoUrl 或 fileId。");
-      }
-
+      // 先保留本機壓縮照片：即使 Drive 同步失敗，本次仍可預覽、AI 初判、點位偵測。
       setData((prev) => ({
         ...prev,
         photo: compressedPhoto,
-        photoUrl,
-        photoFileId,
       }));
+
+      try {
+        const uploaded = await postJson({
+          action: "uploadCustomerPhoto",
+          imageBase64: compressedPhoto,
+          customerName: data.clientName || "未命名個案",
+        });
+
+        const photoFileId = uploaded?.fileId || uploaded?.id || "";
+        const photoUrl =
+          uploaded?.thumbnailUrl ||
+          uploaded?.photoUrl ||
+          uploaded?.url ||
+          (photoFileId ? `https://drive.google.com/thumbnail?id=${photoFileId}&sz=w1200` : "");
+
+        if (!photoUrl && !photoFileId) {
+          throw new Error("照片已壓縮，但後端沒有回傳 photoUrl 或 fileId。");
+        }
+
+        setData((prev) => ({
+          ...prev,
+          photo: compressedPhoto,
+          photoUrl,
+          photoFileId,
+        }));
+      } catch (uploadError) {
+        window.alert(
+          `照片已暫時顯示，可用於本次 AI 初判與點位偵測，但雲端同步失敗：${formatClientError(uploadError)}
+
+請確認 Apps Script 已部署最新版，稍後可重新上傳照片。`
+        );
+        console.warn("照片雲端同步失敗，本機照片已保留", uploadError);
+      }
     } catch (error) {
-      window.alert(`照片上傳失敗：${formatClientError(error)}\n\n請確認 Apps Script 已部署最新版，且 uploadCustomerPhoto 動作可用。`);
-      console.warn("照片壓縮或上傳失敗", error);
+      window.alert(`照片讀取失敗：${formatClientError(error)}
+
+請重新選擇一張照片。`);
+      console.warn("照片壓縮或讀取失敗", error);
     }
   };
 
@@ -1657,8 +1700,6 @@ function ConsultantReportCard({ report }) {
 
 function FormattedReportCard({ formattedReportState }) {
   const result = formattedReportState?.result;
-  const hairRecommendations = result?.hairRecommendations || [];
-  const altHairItems = hairRecommendations.slice(1, 3);
 
   const pages = result
     ? [
@@ -1763,80 +1804,12 @@ function FormattedReportCard({ formattedReportState }) {
                 {page.body || "尚未生成"}
               </div>
 
-{page.isHair && (
-  <div className="mt-5 space-y-4">
-    <div className="text-xs font-semibold tracking-widest text-amber-500">
-      替代方向
-    </div>
-
-    {altHairItems.length > 0 ? (
-      altHairItems.map((item, index) => {
-        const imageUrl = getHairImageUrl(item);
-
-        return (
-          <div
-            key={`${item.hairId || index}-${item.bangId || ""}-${item.partId || ""}`}
-            className="rounded-3xl bg-amber-50/70 p-4 text-amber-900"
-          >
-            <div className="mb-3 text-sm font-semibold">
-              TOP {index + 2}｜替代方向
-            </div>
-
-            {imageUrl && (
-              <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-white bg-white shadow-sm">
-                <img
-                  src={imageUrl}
-                  alt={`${item.hair || "髮型"}＋${item.bang || "瀏海"}＋${item.part || "分線"}`}
-                  className="aspect-[4/5] w-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    const parent = e.currentTarget.closest("div");
-                    if (parent) parent.style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-
-            <div className="grid gap-2 md:grid-cols-3">
-              <div className="rounded-2xl bg-white/70 px-4 py-3">
-                <div className="text-xs text-amber-500">髮型</div>
-                <div className="mt-1 text-sm font-semibold text-stone-800">
-                  {item.hair || "未填"}
+              {page.isHair && result.page8_altOptions && (
+                <div className="mt-4 rounded-2xl bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-800">
+                  <div className="mb-1 text-xs font-semibold tracking-widest text-amber-500">替代方向</div>
+                  <div className="whitespace-pre-line">{result.page8_altOptions}</div>
                 </div>
-              </div>
-
-              <div className="rounded-2xl bg-white/70 px-4 py-3">
-                <div className="text-xs text-amber-500">瀏海</div>
-                <div className="mt-1 text-sm font-semibold text-stone-800">
-                  {item.bang || "未填"}
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-white/70 px-4 py-3">
-                <div className="text-xs text-amber-500">分線</div>
-                <div className="mt-1 text-sm font-semibold text-stone-800">
-                  {item.part || "未填"}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 whitespace-pre-line text-sm leading-7 text-stone-700">
-              {item.reason || item.reportText || "此方向可作為備選髮型參考。"}
-            </div>
-          </div>
-        );
-      })
-    ) : result.page8_altOptions ? (
-      <div className="rounded-2xl bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-800">
-        <div className="whitespace-pre-line">{result.page8_altOptions}</div>
-      </div>
-    ) : (
-      <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-400">
-        尚未產生替代方向。
-      </div>
-    )}
-  </div>
-)}
+              )}
             </div>
           ))}
         </div>
@@ -2143,8 +2116,6 @@ function saveDraftToStorage(draft) {
         data: {
           ...(safeDraft?.data || {}),
           photo: null,
-          photoUrl: safeDraft?.data?.photoUrl || "",
-          photoFileId: safeDraft?.data?.photoFileId || "",
         },
       };
       window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftWithoutPhoto));
@@ -2173,12 +2144,7 @@ export default function App() {
   const [options, setOptions] = useState(fallbackOptions);
   const [apiStates, setApiStates] = useState({ face: { status: "idle", error: "" }, ratio: { status: "idle", error: "" }, line: { status: "idle", error: "" }, volume: { status: "idle", error: "" }, style: { status: "idle", error: "" }, age: { status: "idle", error: "" } });
 const defaultData = {
-  clientName: "",
-  need: "完整形象報告",
-  photo: null,
-  photoUrl: "",
-  photoFileId: "",
-  aiProvider: "gemini",
+  clientName: "", need: "完整形象報告", photo: null, photoUrl: "", photoFileId: "", aiProvider: "gemini",
   measurements: { faceLength: "", faceWidth: "", upperThird: "", middleThird: "", lowerThird: "" },
   eyeObservation: "", extraObservation: "", styleExtraNote: "", colorSeason: "",
   ageAssessment: {}, lineAssessment: {},
@@ -2622,12 +2588,16 @@ const jumpToStep = (step) => {
                 </div>
               </AnalysisPanel>
             )}
- {current === 8 && (
+            {current === 8 && (
   <RecommendPanel
     data={data}
     options={options}
     saveState={saveState}
+    recommendState={recommendState}
+    hairRecommendState={hairRecommendState}
     formattedReportState={formattedReportState}
+    onGenerateRecommendation={handleGenerateRecommendation}
+    onGenerateHairRecommendation={handleGenerateHairRecommendation}
     onGenerateFormattedReport={handleGenerateFormattedReport}
   />
 )}
