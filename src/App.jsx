@@ -1832,183 +1832,471 @@ function ConsultantReportCard({ report }) {
 function FormattedReportCard({ formattedReportState, data, options }) {
   const result = formattedReportState?.result;
 
-  const pages = result
+  const softPages = result
     ? [
-        { key: "page1", title: result.page1_title || "個人顏分析報告", body: [result.page1_subtitle, `姓名：${result.page1_clientName || ""}`, `日期：${result.page1_date || ""}`, `顧問：${result.page1_advisor || "Joanna"}`].filter(Boolean).join("\n") },
-        { key: "page2", title: result.page2_title || "01｜年齡感定位", body: result.page2_body || "" },
-        { key: "page3", title: result.page3_title || "02｜直曲線定位", body: result.page3_body || "" },
-        { key: "page4", title: result.page4_title || "03｜臉型分析", body: result.page4_body || "" },
-        { key: "page5", title: result.page5_title || "04｜比例分析", body: result.page5_body || "" },
-        { key: "page6", title: result.page6_title || "05｜風格定位", body: result.page6_body || "" },
-        { key: "page7", title: result.page7_title || "06｜妝容建議", body: result.page7_body || "" },
-        { key: "page8", title: result.page8_title || "07｜髮型建議", body: result.page8_body || "", isHair: true },
-        { key: "page9", title: result.page9_title || "08｜耳環建議", body: result.page9_body || "" },
-        { key: "page10", title: result.page10_title || "09｜眼鏡建議", body: result.page10_body || "" },
-        { key: "page11", title: result.page11_title || "10｜整體總結", body: result.page11_body || "" },
-        { key: "page12", title: result.page12_title || "11｜結尾", body: result.page12_body || "" },
+        {
+          key: "page1",
+          title: result.page1_title || "個人顏分析報告",
+          subtitle: result.page1_subtitle || "Personal Face Analysis Report",
+          body: [
+            result.page1_clientName ? `姓名｜${result.page1_clientName}` : "",
+            result.page1_date ? `日期｜${result.page1_date}` : "",
+            `顧問｜${result.page1_advisor || "Joanna"}`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          type: "cover",
+        },
+        {
+          key: "page2",
+          title: result.page2_title || "01｜年齡感定位",
+          subtitle: "Age Impression Positioning",
+          body: result.page2_body || "",
+          type: "age",
+        },
+        {
+          key: "page3",
+          title: result.page3_title || "02｜直曲線定位",
+          subtitle: "Straight / Curve Balance",
+          body: result.page3_body || "",
+          type: "line",
+        },
+        {
+          key: "page4",
+          title: result.page4_title || "03｜臉型分析",
+          subtitle: "Face Shape Analysis",
+          body: result.page4_body || "",
+          type: "face",
+        },
+        {
+          key: "page5",
+          title: result.page5_title || "04｜比例分析",
+          subtitle: "Facial Proportion Analysis",
+          body: result.page5_body || "",
+          type: "ratio",
+        },
+        {
+          key: "page6",
+          title: result.page6_title || "05｜風格定位",
+          subtitle: "Style Positioning",
+          body: result.page6_body || "",
+          type: "style",
+        },
+        {
+          key: "page7",
+          title: result.page7_title || "06｜妝容建議",
+          subtitle: "Makeup Direction",
+          body: result.page7_body || "",
+          type: "makeup",
+        },
+        {
+          key: "page8",
+          title: result.page8_title || "07｜髮型建議",
+          subtitle: "Hair Styling Recommendation",
+          body: result.page8_body || "",
+          type: "hair",
+          isHair: true,
+        },
+        {
+          key: "page9",
+          title: result.page9_title || "08｜耳環建議",
+          subtitle: "Earrings Recommendation",
+          body: result.page9_body || "",
+          type: "earrings",
+        },
+        {
+          key: "page10",
+          title: result.page10_title || "09｜眼鏡建議",
+          subtitle: "Glasses Recommendation",
+          body: result.page10_body || "",
+          type: "glasses",
+        },
+        {
+          key: "page11",
+          title: result.page11_title || "10｜整體總結",
+          subtitle: "Overall Summary",
+          body: result.page11_body || "",
+          type: "summary",
+        },
+        {
+          key: "page12",
+          title: result.page12_title || "11｜結尾",
+          subtitle: "Closing Note",
+          body: result.page12_body || "",
+          type: "ending",
+        },
       ]
     : [];
 
+  const splitBody = (text) => {
+    return String(text || "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  };
+
+  const getPageNumber = (key) => {
+    return String(key || "").replace("page", "").padStart(2, "0");
+  };
+
+  const detectAgePosition = (body = "") => {
+    const text = String(body);
+    if (text.includes("偏幼態") || text.includes("幼態")) return "28%";
+    if (text.includes("成熟偏強") || text.includes("成熟")) return "74%";
+    if (text.includes("成熟平衡") || text.includes("年輕自然") || text.includes("平衡")) return "50%";
+    return "50%";
+  };
+
+  const detectLinePosition = (body = "") => {
+    const text = String(body);
+    if (text.includes("直線主導") || text.includes("直線感較多") || text.includes("偏直")) return "28%";
+    if (text.includes("曲線主導") || text.includes("曲線感較多") || text.includes("偏曲")) return "74%";
+    if (text.includes("直曲平衡") || text.includes("平衡")) return "50%";
+    return "50%";
+  };
+
+  const detectStyleKey = (body = "") => {
+    const text = String(body || "");
+    const candidates = [
+      "Active Cute",
+      "Soft Elegant",
+      "Glam Elegant",
+      "Cool Casual",
+      "Cute",
+      "Fresh",
+      "Feminine",
+      "Cool",
+    ];
+
+    return candidates.find((name) => text.includes(name)) || "";
+  };
+
+  const getStyleDotPosition = (styleKey) => {
+    const positions = {
+      Cute: { left: "24%", top: "30%" },
+      "Active Cute": { left: "28%", top: "72%" },
+      Fresh: { left: "42%", top: "36%" },
+      "Soft Elegant": { left: "48%", top: "24%" },
+      Feminine: { left: "62%", top: "24%" },
+      "Glam Elegant": { left: "74%", top: "30%" },
+      Cool: { left: "76%", top: "72%" },
+      "Cool Casual": { left: "58%", top: "72%" },
+    };
+
+    return positions[styleKey] || null;
+  };
+
+  const VisualBlock = ({ page }) => {
+    if (page.type === "cover") {
+      return (
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-rose-50 via-stone-50 to-amber-50 p-8">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-rose-200/30 blur-2xl" />
+          <div className="absolute -bottom-12 -left-12 h-44 w-44 rounded-full bg-amber-200/30 blur-2xl" />
+
+          <div className="relative flex min-h-[260px] flex-col justify-between">
+            <div>
+              <div className="text-xs font-semibold tracking-[0.24em] text-rose-400">
+                JIS IMAGE CONSULTING
+              </div>
+              <div className="mt-8 text-4xl font-semibold leading-tight text-stone-900">
+                個人顏分析報告
+              </div>
+              <div className="mt-4 text-base leading-7 text-stone-500">
+                透過臉型、比例、直曲線、年齡感與風格定位，整理出更適合個人的妝髮與形象方向。
+              </div>
+            </div>
+
+            <div className="mt-10 rounded-3xl bg-white/70 p-5 shadow-sm backdrop-blur">
+              <div className="whitespace-pre-line text-base leading-8 text-stone-700">
+                {page.body || "Joanna Image System"}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (page.type === "age") {
+      return (
+        <div className="rounded-[2rem] bg-rose-50/70 p-6">
+          <div className="mb-5 flex items-center justify-between text-sm font-medium text-stone-500">
+            <span>幼態感</span>
+            <span>成熟感</span>
+          </div>
+
+          <div className="relative h-4 rounded-full bg-gradient-to-r from-rose-200 via-amber-100 to-stone-300">
+            <div
+              className="absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-rose-600 shadow-lg"
+              style={{ left: detectAgePosition(page.body) }}
+            />
+          </div>
+
+          <div className="mt-5 rounded-3xl bg-white/80 p-5 text-sm leading-7 text-stone-600">
+            這張定位圖用來輔助客人理解：她的視覺年齡感是偏親和、自然，還是偏成熟、穩定。
+          </div>
+        </div>
+      );
+    }
+
+    if (page.type === "line") {
+      return (
+        <div className="rounded-[2rem] bg-stone-50 p-6">
+          <div className="mb-5 flex items-center justify-between text-sm font-medium text-stone-500">
+            <span>直線感</span>
+            <span>曲線感</span>
+          </div>
+
+          <div className="relative h-4 rounded-full bg-gradient-to-r from-stone-400 via-rose-100 to-rose-300">
+            <div
+              className="absolute top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-rose-600 shadow-lg"
+              style={{ left: detectLinePosition(page.body) }}
+            />
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <div className="rounded-3xl bg-white/85 p-5">
+              <div className="text-sm font-semibold text-stone-800">直線感</div>
+              <div className="mt-2 text-sm leading-6 text-stone-500">
+                俐落、乾淨、骨架感、結構感。
+              </div>
+            </div>
+            <div className="rounded-3xl bg-white/85 p-5">
+              <div className="text-sm font-semibold text-stone-800">曲線感</div>
+              <div className="mt-2 text-sm leading-6 text-stone-500">
+                柔和、圓潤、親和、流動感。
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+if (page.type === "style") {
+  const selectedStyleCode = data?.style || "";
+  const selectedStyleName = selectedStyleCode
+    ? getName(options?.style || [], selectedStyleCode)
+    : "";
+
+  const position = STYLE_POSITION_MAP[selectedStyleCode];
+
+      return (
+        <div className="rounded-[2rem] bg-rose-50/60 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold text-stone-900">
+                主風格位置
+              </div>
+              <div className="mt-1 text-xs text-stone-500">
+                紅點為目前勾選的主風格位置。
+              </div>
+            </div>
+
+{selectedStyleName && (
+  <div className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-rose-700 shadow-sm">
+    {selectedStyleName}
+  </div>
+)}
+          </div>
+
+          <div className="relative overflow-hidden rounded-[1.75rem] bg-white shadow-sm">
+            {STYLE_MAP_IMAGE_URL ? (
+              <img
+                src={STYLE_MAP_IMAGE_URL}
+                alt="風格定位圖"
+                className="w-full object-contain"
+              />
+            ) : (
+              <div className="flex aspect-[4/3] items-center justify-center text-sm text-stone-400">
+                尚未設定風格定位圖
+              </div>
+            )}
+
+            {position && (
+  <div
+    className="absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-rose-600 shadow-xl ring-4 ring-rose-500/25"
+    style={{ left: `${position.x}%`, top: `${position.y}%` }}
+  />
+)}
+          </div>
+
+          {!position && (
+  <div className="mt-3 rounded-2xl bg-white px-4 py-3 text-xs leading-5 text-stone-500">
+    尚未選擇主風格，或目前風格代碼沒有設定紅點位置。
+  </div>
+)}
+        </div>
+      );
+    }
+
+    if (page.isHair && result.page8_hairImage) {
+      return (
+        <div className="overflow-hidden rounded-[2rem] bg-stone-50 shadow-sm">
+          <img
+            src={result.page8_hairImage}
+            alt={`${result.page8_hairName || "髮型"}＋${result.page8_bangName || "瀏海"}＋${result.page8_partName || "分線"}`}
+            className="aspect-[4/5] w-full object-cover md:max-h-[520px]"
+            loading="lazy"
+            onError={(e) => {
+              const parent = e.currentTarget.closest("div");
+              if (parent) parent.style.display = "none";
+            }}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-[2rem] bg-gradient-to-br from-stone-50 via-rose-50/50 to-amber-50/50 p-6">
+        <div className="flex min-h-[150px] items-center justify-center rounded-[1.5rem] border border-white/80 bg-white/70 text-center shadow-sm">
+          <div>
+            <div className="text-3xl">✦</div>
+            <div className="mt-3 text-sm font-medium tracking-[0.18em] text-stone-400">
+              JIS IMAGE SYSTEM
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="rounded-3xl border border-amber-100 bg-amber-50/40 p-5">
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <div className="rounded-[2rem] border border-rose-100 bg-gradient-to-br from-rose-50/70 via-white to-stone-50 p-4 shadow-sm md:p-6">
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="text-sm font-semibold text-stone-900">
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-400">
+            Client Report Preview
+          </div>
+          <div className="mt-2 text-2xl font-semibold tracking-tight text-stone-900">
             客戶完整報告預覽
           </div>
-          <div className="mt-1 text-xs leading-5 text-stone-500">
-            同一份內容可用於網頁檢查，之後再套入 Canva 固定格式。髮型頁有圖優先顯示，沒有圖也會保留文字。
+          <div className="mt-2 text-sm leading-6 text-stone-500">
+            這裡以正式報告頁形式呈現，適合檢查文字、截圖、或後續套入 Canva。
           </div>
         </div>
 
         {result && (
-          <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-amber-700 ring-1 ring-amber-100">
+          <span className="w-fit rounded-full bg-white px-5 py-2 text-sm font-semibold text-rose-700 shadow-sm ring-1 ring-rose-100">
             已生成 12 頁
           </span>
         )}
       </div>
 
       {formattedReportState?.status === "idle" && (
-        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-stone-400">
+        <div className="rounded-[1.5rem] bg-white px-5 py-4 text-sm text-stone-400 shadow-sm">
           尚未生成客戶完整報告。
         </div>
       )}
 
       {formattedReportState?.status === "loading" && (
-        <div className="rounded-2xl bg-white px-4 py-3 text-sm text-stone-500">
+        <div className="rounded-[1.5rem] bg-white px-5 py-4 text-sm text-stone-500 shadow-sm">
           客戶完整報告生成中…
         </div>
       )}
 
       {formattedReportState?.error && (
-        <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
+        <div className="rounded-[1.5rem] bg-rose-50 px-5 py-4 text-sm leading-6 text-rose-700">
           {formattedReportState.error}
         </div>
       )}
 
       {result && (
-        <div className="space-y-4">
-          {pages.map((page) => (
-            <div key={page.key} className="rounded-3xl bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-stone-900">
-                  {page.title}
-                </div>
-                <div className="rounded-full bg-stone-50 px-3 py-1 text-[11px] font-medium text-stone-400">
-                  {page.key.replace("page", "Page ")}
-                </div>
-              </div>
+        <div className="space-y-8">
+          {softPages.map((page) => {
+            const bodyLines = splitBody(page.body);
 
-              {page.isHair && result.page8_hairImage && (
-                <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-stone-100 bg-stone-50 shadow-sm">
-                  <img
-                    src={result.page8_hairImage}
-                    alt={`${result.page8_hairName || "髮型"}＋${result.page8_bangName || "瀏海"}＋${result.page8_partName || "分線"}`}
-                    className="aspect-[4/5] w-full object-cover md:max-h-[520px]"
-                    loading="lazy"
-                    onError={(e) => {
-                      const parent = e.currentTarget.closest("div");
-                      if (parent) parent.style.display = "none";
-                    }}
-                  />
-                </div>
-              )}
+            return (
+              <article
+                key={page.key}
+                className="overflow-hidden rounded-[2rem] border border-white bg-white shadow-xl shadow-rose-100/40"
+              >
+                <div className="bg-gradient-to-br from-white via-rose-50/50 to-stone-50 p-6 md:p-8">
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-rose-400">
+                        JIS IMAGE CONSULTING
+                      </div>
 
-              {page.isHair && (
-                <div className="mb-3 grid gap-2 md:grid-cols-3">
-                  <div className="rounded-2xl bg-stone-50 px-4 py-3">
-                    <div className="text-xs text-stone-400">髮型</div>
-                    <div className="mt-1 text-sm font-semibold text-stone-800">{result.page8_hairName || "未填"}</div>
-                  </div>
-                  <div className="rounded-2xl bg-stone-50 px-4 py-3">
-                    <div className="text-xs text-stone-400">瀏海</div>
-                    <div className="mt-1 text-sm font-semibold text-stone-800">{result.page8_bangName || "未填"}</div>
-                  </div>
-                  <div className="rounded-2xl bg-stone-50 px-4 py-3">
-                    <div className="text-xs text-stone-400">分線</div>
-                    <div className="mt-1 text-sm font-semibold text-stone-800">{result.page8_partName || "未填"}</div>
-                  </div>
-                </div>
-              )}
+                      <h3 className="mt-3 text-2xl font-semibold leading-tight text-stone-900 md:text-3xl">
+                        {page.title}
+                      </h3>
 
-              {page.key === "page2" && (
-                <div className="mb-4">
-                  <AssessmentReportCard
-                    title="年齡感定位評估表"
-                    items={ageAssessmentItems}
-                    leftTitle="幼態"
-                    rightTitle="成熟"
-                    leftValue="juvenile"
-                    rightValue="mature"
-                    value={data.ageAssessment || {}}
-                    resultText={getAgeAssessmentResult(data.ageAssessment || {})}
-                    selectedTypeLabel={`${data.age || ""} ${getName(options.age, data.age)}`.trim()}
-                  />
-                </div>
-              )}
-
-              {page.key === "page3" && (
-                <div className="mb-4">
-                  <AssessmentReportCard
-                    title="直曲線定位評估表"
-                    items={lineAssessmentItems}
-                    leftTitle="直線"
-                    rightTitle="曲線"
-                    leftValue="straight"
-                    rightValue="curve"
-                    value={data.lineAssessment || {}}
-                    resultText={getLineAssessmentResult(data.lineAssessment || {})}
-                    selectedTypeLabel={`${data.line || ""} ${getName(options.line, data.line)}`.trim()}
-                  />
-                </div>
-              )}
-
-              {page.key === "page6" && (
-                <div className="mb-4 space-y-4">
-                  <StyleMapFigure
-                    value={data.style}
-                    imageUrl={STYLE_MAP_IMAGE_URL}
-                    alt="風格座標圖"
-                    options={options}
-                  />
-
-                  <div className="grid gap-2 md:grid-cols-3">
-                    <div className="rounded-2xl bg-stone-50 px-4 py-3">
-                      <div className="text-xs text-stone-400">主風格</div>
-                      <div className="mt-1 text-sm font-semibold text-stone-800">
-                        {data.style ? `${data.style} ${getName(options.style, data.style)}` : "未填"}
+                      <div className="mt-2 text-sm font-medium text-stone-400">
+                        {page.subtitle}
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-stone-50 px-4 py-3">
-                      <div className="text-xs text-stone-400">副風格</div>
-                      <div className="mt-1 text-sm font-semibold text-stone-800">
-                        {data.styleSupplementTags?.[0] || "未填"}
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-stone-900 text-sm font-semibold text-white shadow-md">
+                      {getPageNumber(page.key)}
+                    </div>
+                  </div>
+
+                  <VisualBlock page={page} />
+
+                  {page.isHair && (
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      <div className="rounded-3xl bg-white/80 px-5 py-4 shadow-sm">
+                        <div className="text-xs font-medium text-stone-400">髮型</div>
+                        <div className="mt-1 text-base font-semibold text-stone-800">
+                          {result.page8_hairName || "未填"}
+                        </div>
+                      </div>
+                      <div className="rounded-3xl bg-white/80 px-5 py-4 shadow-sm">
+                        <div className="text-xs font-medium text-stone-400">瀏海</div>
+                        <div className="mt-1 text-base font-semibold text-stone-800">
+                          {result.page8_bangName || "未填"}
+                        </div>
+                      </div>
+                      <div className="rounded-3xl bg-white/80 px-5 py-4 shadow-sm">
+                        <div className="text-xs font-medium text-stone-400">分線</div>
+                        <div className="mt-1 text-base font-semibold text-stone-800">
+                          {result.page8_partName || "未填"}
+                        </div>
                       </div>
                     </div>
+                  )}
 
-                    <div className="rounded-2xl bg-stone-50 px-4 py-3">
-                      <div className="text-xs text-stone-400">色彩季型補充</div>
-                      <div className="mt-1 text-sm font-semibold text-stone-800">
-                        {data.colorSeason || "未填"}
+                  <div className="mt-6 rounded-[1.75rem] bg-white/90 p-5 shadow-sm md:p-6">
+                    {bodyLines.length > 0 ? (
+                      <div className="space-y-3">
+                        {bodyLines.map((line, index) => (
+                          <p
+                            key={`${page.key}-line-${index}`}
+                            className="text-base leading-8 text-stone-700 md:text-lg md:leading-9"
+                          >
+                            {line}
+                          </p>
+                        ))}
                       </div>
+                    ) : (
+                      <div className="text-base leading-8 text-stone-400">
+                        尚未生成
+                      </div>
+                    )}
+                  </div>
+
+                  {page.isHair && result.page8_altOptions && (
+                    <div className="mt-5 rounded-[1.5rem] bg-amber-50 px-5 py-4 text-base leading-8 text-amber-800">
+                      <div className="mb-2 text-xs font-semibold tracking-[0.18em] text-amber-500">
+                        替代方向
+                      </div>
+                      <div className="whitespace-pre-line">
+                        {result.page8_altOptions}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex items-center justify-between border-t border-rose-100 pt-4">
+                    <div className="text-xs font-medium tracking-[0.18em] text-stone-300">
+                      JOANNA IMAGE SYSTEM
+                    </div>
+                    <div className="text-xs text-stone-300">
+                      Page {getPageNumber(page.key)}
                     </div>
                   </div>
                 </div>
-              )}
-
-              <div className="whitespace-pre-line text-sm leading-7 text-stone-700">
-                {page.body || "尚未生成"}
-              </div>
-
-              {page.isHair && result.page8_altOptions && (
-                <div className="mt-4 rounded-2xl bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-800">
-                  <div className="mb-1 text-xs font-semibold tracking-widest text-amber-500">替代方向</div>
-                  <div className="whitespace-pre-line">{result.page8_altOptions}</div>
-                </div>
-              )}
-            </div>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
     </div>
