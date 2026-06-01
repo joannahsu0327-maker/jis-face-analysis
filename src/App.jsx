@@ -15,6 +15,18 @@ const API_BASE_URL =
 const STYLE_MAP_IMAGE_URL =
   "https://drive.google.com/thumbnail?id=1qJ-qTIeGXjYeh3IFW8qecjQ79GP1POIk&sz=w1600";
 
+
+const STYLE_POSITION_MAP = {
+  ST01: { x: 80, y: 22, label: "Cute" },
+  ST02: { x: 60, y: 33, label: "Active Cute" },
+  ST03: { x: 33, y: 38, label: "Fresh" },
+  ST04: { x: 50, y: 58, label: "Soft Elegant" },
+  ST05: { x: 72, y: 66, label: "Feminine" },
+  ST06: { x: 50, y: 82, label: "Glam Elegant" },
+  ST07: { x: 24, y: 66, label: "Cool" },
+  ST08: { x: 18, y: 26, label: "Cool Casual" },
+};
+
 const SHEETS = {
   face: "03 臉型 FS",
   ratio: "04 比例 RT",
@@ -841,6 +853,51 @@ function AssessmentReportCard({
     </div>
   );
 }
+
+function StyleMapFigure({ value, imageUrl = STYLE_MAP_IMAGE_URL, alt = "風格座標圖", options }) {
+  const position = STYLE_POSITION_MAP[value];
+  const mainStyleName = value ? getName(options?.style || [], value) : "";
+
+  if (!imageUrl) {
+    return (
+      <div className="rounded-3xl border border-dashed border-stone-200 bg-stone-50 px-5 py-8 text-center text-sm leading-6 text-stone-500">
+        請先填入 STYLE_MAP_IMAGE_URL。
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-stone-100 bg-stone-50 shadow-sm">
+      <div className="relative">
+        <img src={imageUrl} alt={alt} className="w-full object-contain [touch-action:pinch-zoom]" />
+
+        {position && (
+          <>
+            <div
+              className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: `${position.x}%`, top: `${position.y}%` }}
+            >
+              <div className="relative flex items-center justify-center">
+                <span className="absolute inline-flex h-6 w-6 animate-ping rounded-full bg-rose-500/35" />
+                <span className="relative h-4 w-4 rounded-full border-2 border-white bg-rose-600 shadow-lg shadow-rose-500/40" />
+              </div>
+            </div>
+
+            <div
+              className="pointer-events-none absolute z-20 -translate-x-1/2"
+              style={{ left: `${position.x}%`, top: `calc(${position.y}% + 18px)` }}
+            >
+              <div className="rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-rose-700 shadow ring-1 ring-rose-100 backdrop-blur">
+                主風格位置：{mainStyleName || position.label}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const FACE_GROUPS = [
   { key: "all", label: "全部", hint: "FS01–FS14", codes: [] },
   { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
@@ -1842,38 +1899,6 @@ function FormattedReportCard({ formattedReportState, data, options }) {
                 </div>
               </div>
 
-              {page.key === "page2" && (
-                <div className="mb-4">
-                  <AssessmentReportCard
-                    title="年齡感定位評估表"
-                    items={ageAssessmentItems}
-                    leftTitle="幼態"
-                    rightTitle="成熟"
-                    leftValue="juvenile"
-                    rightValue="mature"
-                    value={data.ageAssessment || {}}
-                    resultText={getAgeAssessmentResult(data.ageAssessment || {})}
-                    selectedTypeLabel={`${data.age || ""} ${getName(options.age, data.age)}`}
-                  />
-                </div>
-              )}
-
-              {page.key === "page3" && (
-                <div className="mb-4">
-                  <AssessmentReportCard
-                    title="直曲線定位評估表"
-                    items={lineAssessmentItems}
-                    leftTitle="直線"
-                    rightTitle="曲線"
-                    leftValue="straight"
-                    rightValue="curve"
-                    value={data.lineAssessment || {}}
-                    resultText={getLineAssessmentResult(data.lineAssessment || {})}
-                    selectedTypeLabel={`${data.line || ""} ${getName(options.line, data.line)}`}
-                  />
-                </div>
-              )}
-
               {page.isHair && result.page8_hairImage && (
                 <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-stone-100 bg-stone-50 shadow-sm">
                   <img
@@ -1902,6 +1927,72 @@ function FormattedReportCard({ formattedReportState, data, options }) {
                   <div className="rounded-2xl bg-stone-50 px-4 py-3">
                     <div className="text-xs text-stone-400">分線</div>
                     <div className="mt-1 text-sm font-semibold text-stone-800">{result.page8_partName || "未填"}</div>
+                  </div>
+                </div>
+              )}
+
+              {page.key === "page2" && (
+                <div className="mb-4">
+                  <AssessmentReportCard
+                    title="年齡感定位評估表"
+                    items={ageAssessmentItems}
+                    leftTitle="幼態"
+                    rightTitle="成熟"
+                    leftValue="juvenile"
+                    rightValue="mature"
+                    value={data.ageAssessment || {}}
+                    resultText={getAgeAssessmentResult(data.ageAssessment || {})}
+                    selectedTypeLabel={`${data.age || ""} ${getName(options.age, data.age)}`.trim()}
+                  />
+                </div>
+              )}
+
+              {page.key === "page3" && (
+                <div className="mb-4">
+                  <AssessmentReportCard
+                    title="直曲線定位評估表"
+                    items={lineAssessmentItems}
+                    leftTitle="直線"
+                    rightTitle="曲線"
+                    leftValue="straight"
+                    rightValue="curve"
+                    value={data.lineAssessment || {}}
+                    resultText={getLineAssessmentResult(data.lineAssessment || {})}
+                    selectedTypeLabel={`${data.line || ""} ${getName(options.line, data.line)}`.trim()}
+                  />
+                </div>
+              )}
+
+              {page.key === "page6" && (
+                <div className="mb-4 space-y-4">
+                  <StyleMapFigure
+                    value={data.style}
+                    imageUrl={STYLE_MAP_IMAGE_URL}
+                    alt="風格座標圖"
+                    options={options}
+                  />
+
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                      <div className="text-xs text-stone-400">主風格</div>
+                      <div className="mt-1 text-sm font-semibold text-stone-800">
+                        {data.style ? `${data.style} ${getName(options.style, data.style)}` : "未填"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                      <div className="text-xs text-stone-400">副風格</div>
+                      <div className="mt-1 text-sm font-semibold text-stone-800">
+                        {data.styleSupplementTags?.[0] || "未填"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                      <div className="text-xs text-stone-400">色彩季型補充</div>
+                      <div className="mt-1 text-sm font-semibold text-stone-800">
+                        {data.colorSeason || "未填"}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2182,6 +2273,8 @@ function runSelfChecks() {
   console.assert(getHairImageUrl({ hairId: "H003", bangId: "B003", partId: "P001" }) === "/hair-library/h003-b003-p001.jpg", "hair image url should be normalized");
   console.assert(steps.length === 9, "workflow should have 9 steps");
   console.assert(typeof SingleChoiceGroup === "function", "SingleChoiceGroup should be defined before BasicPanel uses it");
+  console.assert(STYLE_POSITION_MAP.ST04?.x === 50, "style map positions should be defined");
+  console.assert(typeof StyleMapFigure === "function", "StyleMapFigure should be defined");
 }
 
 if (typeof window !== "undefined") {
@@ -2680,7 +2773,7 @@ const jumpToStep = (step) => {
             {current === 6 && <AnalysisPanel title="量感分析 VM" description="判斷五官的大小與存在感。" label="選擇量感類型" options={options.volume} value={data.volume} onChange={(val) => handleMainChange("volume", val)} apiState={apiStates.volume} onReload={() => reloadOptionGroup("volume")} />}
             {current === 7 && (
               <AnalysisPanel title="風格分析 ST" description="定位最終的風格坐標。" label="選擇主風格" options={options.style} value={data.style} onChange={(val) => handleMainChange("style", val)} apiState={apiStates.style} onReload={() => reloadOptionGroup("style")}>
-                <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"><div className="mb-4"><div className="text-sm font-semibold text-stone-900">風格座標圖</div><div className="mt-1 text-xs leading-5 text-stone-500">輔助判斷幼態／成熟、直線／曲線與八大風格位置。</div></div>{STYLE_MAP_IMAGE_URL ? <div className="overflow-hidden rounded-3xl bg-stone-50"><img src={STYLE_MAP_IMAGE_URL} alt="風格座標圖" className="w-full object-contain [touch-action:pinch-zoom]" /></div> : <div className="rounded-3xl border border-dashed border-stone-200 bg-stone-50 px-5 py-8 text-center text-sm leading-6 text-stone-500">請先填入 STYLE_MAP_IMAGE_URL。</div>}</div>
+                <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"><div className="mb-4"><div className="text-sm font-semibold text-stone-900">風格座標圖</div><div className="mt-1 text-xs leading-5 text-stone-500">輔助判斷幼態／成熟、直線／曲線與八大風格位置。</div></div>{<StyleMapFigure value={data.style} imageUrl={STYLE_MAP_IMAGE_URL} alt="風格座標圖" options={options} />}</div>
                 <SingleSelectTagGroup title="色彩整合補充" groups={colorSeasonGroups} value={data.colorSeason || ""} onChange={(next) => handleMainChange("colorSeason", next)} />
                 <CheckboxTagGroup title={observationTagGroups.styleSupplementTags.title} hint={observationTagGroups.styleSupplementTags.hint} options={observationTagGroups.styleSupplementTags.options} value={data.styleSupplementTags || []} onChange={(next) => handleMainChange("styleSupplementTags", next.slice(-1))} />
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"><Field label="風格／色彩額外補充" hint="放與風格、色彩、整體氣質相關的補充，不放純結構觀察。"><textarea style={{ fontSize: 16 }} value={data.styleExtraNote || ""} onChange={(e) => handleMainChange("styleExtraNote", e.target.value)} className="min-h-28 w-full rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 outline-none focus:border-rose-400" placeholder="例如：可保留 Fresh 感，但妝感不宜過透明。" /></Field></div>
