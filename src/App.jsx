@@ -66,12 +66,13 @@ async function loadMediapipe() {
 async function getFaceLandmarker() {
   if (faceLandmarkerInstance) return faceLandmarkerInstance;
 
-  const loaded = await loadMediapipe();
-  const vision = await loaded.FilesetResolver.forVisionTasks(
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm"
-);
-
   try {
+    const loaded = await loadMediapipe();
+
+    const vision = await loaded.FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm"
+    );
+
     faceLandmarkerInstance = await loaded.FaceLandmarker.createFromOptions(vision, {
       baseOptions: {
         modelAssetPath:
@@ -81,12 +82,13 @@ async function getFaceLandmarker() {
       runningMode: "IMAGE",
       numFaces: 1,
     });
-  } catch (error) {
-    faceLandmarkerInstance = null;
-    throw new Error("MediaPipe 點位模型載入失敗，請重新整理頁面後再試；若仍失敗，請改用正式 Vercel 網站測試。");
-  }
 
-  return faceLandmarkerInstance;
+    return faceLandmarkerInstance;
+  } catch (error) {
+    console.error("MediaPipe 真實錯誤：", error);
+    faceLandmarkerInstance = null;
+    throw new Error(`MediaPipe 真實錯誤：${error?.message || String(error)}`);
+  }
 }
 
 function cx(...classes) {
@@ -1545,7 +1547,7 @@ function BasicPanel({ data, setData, options, aiState, onAIAnalyze, onSyncAll, a
     <section className="space-y-6">
       <header className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-stone-900">AI 初判與量測</h2>
+          <h2 className="text-2xl font-semibold text-stone-900">AI 初判與量測 V2</h2>
           <p className="mt-2 text-stone-500">上傳照片後，再進行 AI 初判、點位偵測與人工修正。</p>
         </div>
         <button type="button" onClick={onSyncAll} disabled={isSyncing} className={cx("flex h-10 w-10 items-center justify-center rounded-full border transition", isSyncing ? "border-stone-300 bg-stone-100" : "border-stone-200 bg-white hover:bg-stone-50")}>
