@@ -768,7 +768,79 @@ function BinaryAssessmentTable({ title, hint, items, leftTitle, rightTitle, left
     </div>
   );
 }
+function AssessmentReportCard({
+  title,
+  items,
+  leftTitle,
+  rightTitle,
+  leftValue,
+  rightValue,
+  value = {},
+  resultText,
+  selectedTypeLabel,
+}) {
+  return (
+    <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
+      <div className="mb-4">
+        <div className="text-sm font-semibold text-stone-900">{title}</div>
 
+        {selectedTypeLabel && (
+          <div className="mt-2 inline-flex rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">
+            最終類型：{selectedTypeLabel}
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-hidden rounded-3xl border border-stone-100">
+        <div className="grid grid-cols-[1.1fr_1fr_1fr] bg-stone-900 text-sm font-semibold text-white">
+          <div className="px-4 py-3">評估項目</div>
+          <div className="px-4 py-3 text-center">{leftTitle}</div>
+          <div className="px-4 py-3 text-center">{rightTitle}</div>
+        </div>
+
+        {items.map((item, index) => (
+          <div
+            key={item.key}
+            className={cx(
+              "grid grid-cols-[1.1fr_1fr_1fr] items-stretch border-t border-stone-100 text-sm",
+              index % 2 === 0 ? "bg-white" : "bg-stone-50/70"
+            )}
+          >
+            <div className="flex items-center px-4 py-3 font-medium text-stone-800">
+              {item.label}
+            </div>
+
+            <div
+              className={cx(
+                "px-4 py-3 text-center",
+                value?.[item.key] === leftValue
+                  ? "bg-rose-600 text-white"
+                  : "text-stone-600"
+              )}
+            >
+              {item.left}
+            </div>
+
+            <div
+              className={cx(
+                "px-4 py-3 text-center",
+                value?.[item.key] === rightValue
+                  ? "bg-rose-600 text-white"
+                  : "text-stone-600"
+              )}
+            >
+              {item.right}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-2xl bg-rose-50/60 px-4 py-3 text-sm font-medium text-rose-800">
+        定位結論：{resultText}
+      </div>
+    </div>
+  );
+}
 const FACE_GROUPS = [
   { key: "all", label: "全部", hint: "FS01–FS14", codes: [] },
   { key: "round", label: "圓型系", hint: "FS01–FS02", codes: ["FS01", "FS02"] },
@@ -1700,7 +1772,7 @@ function ConsultantReportCard({ report }) {
   );
 }
 
-function FormattedReportCard({ formattedReportState }) {
+function FormattedReportCard({ formattedReportState, data, options }) {
   const result = formattedReportState?.result;
 
   const pages = result
@@ -1769,6 +1841,38 @@ function FormattedReportCard({ formattedReportState }) {
                   {page.key.replace("page", "Page ")}
                 </div>
               </div>
+
+              {page.key === "page2" && (
+                <div className="mb-4">
+                  <AssessmentReportCard
+                    title="年齡感定位評估表"
+                    items={ageAssessmentItems}
+                    leftTitle="幼態"
+                    rightTitle="成熟"
+                    leftValue="juvenile"
+                    rightValue="mature"
+                    value={data.ageAssessment || {}}
+                    resultText={getAgeAssessmentResult(data.ageAssessment || {})}
+                    selectedTypeLabel={`${data.age || ""} ${getName(options.age, data.age)}`}
+                  />
+                </div>
+              )}
+
+              {page.key === "page3" && (
+                <div className="mb-4">
+                  <AssessmentReportCard
+                    title="直曲線定位評估表"
+                    items={lineAssessmentItems}
+                    leftTitle="直線"
+                    rightTitle="曲線"
+                    leftValue="straight"
+                    rightValue="curve"
+                    value={data.lineAssessment || {}}
+                    resultText={getLineAssessmentResult(data.lineAssessment || {})}
+                    selectedTypeLabel={`${data.line || ""} ${getName(options.line, data.line)}`}
+                  />
+                </div>
+              )}
 
               {page.isHair && result.page8_hairImage && (
                 <div className="mb-4 overflow-hidden rounded-[1.5rem] border border-stone-100 bg-stone-50 shadow-sm">
@@ -2063,7 +2167,11 @@ function RecommendPanel({
         </div>
       </div>
 
-      <FormattedReportCard formattedReportState={formattedReportState} />
+      <FormattedReportCard
+  formattedReportState={formattedReportState}
+  data={data}
+  options={options}
+/>
     </section>
   );
 }
